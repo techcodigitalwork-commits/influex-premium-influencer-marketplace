@@ -1,6 +1,6 @@
 // src/services/discover.service.js
 import User from "../models/user.js";
-import esClient from "../utils/elastic.js";
+import esClient from "../utils/redis.js";
 
 export const searchCreators = async (q) => {
   const {
