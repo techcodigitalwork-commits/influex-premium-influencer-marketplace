@@ -1,11 +1,7 @@
-// src/controllers/campaign.controller.js
-
-
 import Campaign from "../models/Campaign.js";
 
 export const createCampaign = async (req, res) => {
   try {
-    // Only Brand can create campaign
     if (req.user.role !== "Brand") {
       return res.status(403).json({
         success: false,
@@ -20,7 +16,9 @@ export const createCampaign = async (req, res) => {
       categories,
       city,
       budget,
-      deliverables
+      deliverables,
+      startDate,
+      endDate
     } = req.body;
 
     const campaign = await Campaign.create({
@@ -32,13 +30,15 @@ export const createCampaign = async (req, res) => {
       city,
       budget,
       deliverables,
-      status: "OPEN"
+      startDate,
+      endDate
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       data: campaign
     });
+
   } catch (error) {
     console.error("Create Campaign Error:", error);
     res.status(500).json({
@@ -49,15 +49,16 @@ export const createCampaign = async (req, res) => {
 };
 
 
+
 export const matchingCampaigns = async (req, res) => {
   const user = req.user;
 
   const campaigns = await Campaign.find({
-    status: "OPEN",
-    roles: user.role,
-    city: user.profile.city,
-    budget: { $gte: user.profile.budget }
-  });
+  status: "OPEN",
+  roles: { $in: [user.role] },
+  city: user.profile.city,
+  budget: { $gte: user.profile.budget }
+});
 
   res.json({ data: campaigns });
 };

@@ -22,6 +22,16 @@ const campaignSchema = new mongoose.Schema({
   }],
 
   categories: [String],
+   
+    // 🔥 NEW DATE FIELDS
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
+    required: true
+  },
 
   city: {
     type: String,
