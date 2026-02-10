@@ -8,7 +8,7 @@ import metaRoutes from "./Routes/meta.routes.js";
 import campaignRoutes from "./Routes/campaign.routes.js";
 import applicationRoutes from "./Routes/application.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
-import authRoutes from "./routes/auth.routes.js";
+
 
 import { connectDB } from "./config/db.js";
 
@@ -56,6 +56,12 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
+import mongoose from "mongoose";
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ Mongo error", err));
 
 
 

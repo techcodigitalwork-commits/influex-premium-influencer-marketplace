@@ -1,7 +1,46 @@
-// models/Conversation.js
-const convoSchema = new mongoose.Schema({
-  campaignId: mongoose.Schema.Types.ObjectId,
-  participants: [mongoose.Schema.Types.ObjectId]
+import mongoose from "mongoose";
+
+const messageSchema = new mongoose.Schema({
+  sender: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  text: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-export default mongoose.model("Conversation", convoSchema);
+const conversationSchema = new mongoose.Schema({
+  campaignId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Campaign",
+    required: true
+  },
+
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  }],
+
+  messages: [messageSchema],
+
+  lastMessage: {
+    type: String
+  },
+
+  lastMessageAt: {
+    type: Date
+  }
+
+}, { timestamps: true });
+
+export default mongoose.model("Conversation", conversationSchema);
+

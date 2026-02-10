@@ -1,10 +1,16 @@
-// models/Application.js
+import mongoose from "mongoose";
+
 const applicationSchema = new mongoose.Schema({
-  campaignId: { type: mongoose.Schema.Types.ObjectId, ref: "Campaign" },
-  creatorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-
-  message: String,
-
+  campaignId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Campaign",
+    required: true
+  },
+  creatorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
   status: {
     type: String,
     enum: ["PENDING", "ACCEPTED", "REJECTED"],
