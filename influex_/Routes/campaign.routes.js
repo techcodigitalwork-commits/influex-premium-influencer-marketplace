@@ -1,17 +1,27 @@
-// src/routes/campaign.routes.js
 import express from "express";
-import { matchingCampaigns } from "../controllers/Campaign.controller.js";
 import auth from "../middlewares/auth.middleware.js";
+
+import {
+  createCampaign,
+  matchingCampaigns,
+  completeCampaign
+} from "../controllers/Campaign.controller.js";
+
 import { getApplications } from "../controllers/application.controller.js";
-import { completeCampaign } from "../controllers/Campaign.controller.js";
-
-
-
 
 const router = express.Router();
 
+// 👉 CREATE CAMPAIGN (Brand only)
+router.post("/", auth, createCampaign);
+
+// 👉 MATCHING CAMPAIGNS (Influencer)
 router.get("/matching", auth, matchingCampaigns);
+
+// 👉 COMPLETE CAMPAIGN
 router.post("/:id/complete", auth, completeCampaign);
+
+// 👉 GET APPLICATIONS
 router.get("/:id/applications", auth, getApplications);
 
 export default router;
+
