@@ -24,11 +24,7 @@ const UserSchema = new mongoose.Schema({
     enum: ["Pending", "Verified", "Rejected"],
     default: "Pending"
   }
-  password: {
-  type: String,
-  required: true,
-  select: false   // 🔥 isi wajah se password nahi aa raha
-}
+ 
 
 }, { timestamps: true });
 
