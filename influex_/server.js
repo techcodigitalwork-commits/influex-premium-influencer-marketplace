@@ -1,68 +1,52 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 
-import authRoutes from "./routes/auth.routes.js";
-import publicRoutes from "./routes/public.routes.js";
+// Load env
+dotenv.config();
+
+// Routes
+import authRoutes from "./Routes/auth.routes.js";
+import publicRoutes from "./Routes/public.routes.js";
 import metaRoutes from "./Routes/meta.routes.js";
+import discoverRoutes from "./Routes/discover.routes.js";
 import campaignRoutes from "./Routes/campaign.routes.js";
-import applicationRoutes from "./Routes/application.routes.js";
-import reviewRoutes from "./routes/review.routes.js";
+import reviewRoutes from "./Routes/review.routes.js";
 
-
-import { connectDB } from "./config/db.js";
-
+// App init
 const app = express();
 
-/* ------------------ DB ------------------ */
-connectDB();
-
-/* ------------------ MIDDLEWARES ------------------ */
+// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-/* ------------------ ROUTES ------------------ */
-
-// Auth
-app.use("/auth", authRoutes);
-
-// Public (Home page)
-app.use("/public", publicRoutes);
-
-// Meta (Cities, future dropdowns)
-app.use("/meta", metaRoutes);
-
-// Campaigns (Create, Match, Complete, Applications list)
-app.use("/campaigns", campaignRoutes);
-
-// Applications (Apply, Accept/Reject)
-app.use("/applications", applicationRoutes);
-
-// Reviews
-app.use("/reviews", reviewRoutes);
-
-app.use("/auth", authRoutes);
-
-/* ------------------ HEALTH CHECK ------------------ */
-app.get("/health", (req, res) => {
-  res.json({ status: "OK", uptime: process.uptime() });
+// Health check
+app.get("/", (req, res) => {
+  res.send("🚀 Influex Backend API is running");
 });
 
-/* ------------------ SERVER ------------------ */
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/public", publicRoutes);
+app.use("/api/meta", metaRoutes);
+app.use("/api/discover", discoverRoutes);
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/reviews", reviewRoutes);
+
+// MongoDB connect
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
-import mongoose from "mongoose";
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ Mongo error", err));
-
-
-
-
+  .then(() => {
+    console.log("✅ MongoDB connected");
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err);
+  });
