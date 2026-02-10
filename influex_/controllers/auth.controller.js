@@ -2,21 +2,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
-// Helper function to generate JWT
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
-
-// SIGNUP
 export const signup = async (req, res) => {
   try {
-    let { email, password, role } = req.body;
+    const { email, password, role } = req.body;
 
-    // Trim email & convert to lowercase
-    email = email.trim().toLowerCase();
-
-    // Check if user already exists
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -24,18 +14,19 @@ export const signup = async (req, res) => {
       });
     }
 
-    // Hash the password
     const hashed = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await User.create({
-      email,
+      email: email.toLowerCase(),
       passwordHash: hashed,
       role
     });
 
-    // Generate JWT token
-    const token = generateToken(user._id);
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.json({
       success: true,
@@ -48,21 +39,16 @@ export const signup = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Signup Error:", err);
-    res.status(500).json({ success: false, message: "Server error during signup" });
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 };
 
-// LOGIN
 export const login = async (req, res) => {
   try {
-    let { email, password } = req.body;
+    const { email, password } = req.body;
 
-    // Trim email & lowercase
-    email = email.trim().toLowerCase();
-
-    // Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -70,7 +56,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({
@@ -79,8 +64,11 @@ export const login = async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = generateToken(user._id);
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.json({
       success: true,
@@ -93,7 +81,7 @@ export const login = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Login Error:", err);
-    res.status(500).json({ success: false, message: "Server error during login" });
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 };
