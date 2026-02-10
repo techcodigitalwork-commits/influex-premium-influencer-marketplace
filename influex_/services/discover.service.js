@@ -1,6 +1,5 @@
 // src/services/discover.service.js
-import User from "../models/user.js";
-import Redis from "../utils/redis.js";
+import User from "../models/User.js";
 
 export const searchCreators = async (q) => {
   const {
@@ -13,45 +12,37 @@ export const searchCreators = async (q) => {
     limit = 12
   } = q;
 
-  const esQuery = {
-    bool: {
-      must: [
-        { term: { kycStatus: "Verified" } },
-        { term: { isActive: true } }
-      ],
-      filter: []
-    }
+  const filter = {
+    kycStatus: "Verified",
+    isActive: true
   };
 
-  if (role) esQuery.bool.filter.push({ term: { role } });
-  if (city) esQuery.bool.filter.push({ term: { city } });
-  if (category) esQuery.bool.filter.push({ term: { category } });
+  if (role) filter.role = role;
+  if (city) filter["profile.city"] = city;
+  if (category) filter["profile.category"] = category;
 
   if (budgetMin || budgetMax) {
-    esQuery.bool.filter.push({
-      range: {
-        budgetMin: { gte: budgetMin || 0 },
-        budgetMax: { lte: budgetMax || 999999 }
-      }
-    });
+    filter["profile.budget"] = {};
+    if (budgetMin) filter["profile.budget"].$gte = Number(budgetMin);
+    if (budgetMax) filter["profile.budget"].$lte = Number(budgetMax);
   }
 
-  const esResult = await esClient.search({
-    index: "creators",
-    from: (page - 1) * limit,
-    size: limit,
-    query: esQuery
-  });
+  const skip = (page - 1) * limit;
 
-  const ids = esResult.hits.hits.map(h => h._source.userId);
+  const [results, total] = await Promise.all([
+    User.find(filter)
+      .select("name role profile.city profile.category profile.budget rating avatar")
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
 
-  const users = await User.find({ _id: { $in: ids } })
-    .select("name role city category rating avatar budgetMin budgetMax");
+    User.countDocuments(filter)
+  ]);
 
   return {
-    total: esResult.hits.total.value,
+    total,
     page: Number(page),
     limit: Number(limit),
-    results: users
+    results
   };
 };
