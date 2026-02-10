@@ -1,5 +1,5 @@
 // src/services/discover.service.js
-import User from "../models/User.js";
+import User from "../models/user.js";
 
 export const searchCreators = async (q) => {
   const {
