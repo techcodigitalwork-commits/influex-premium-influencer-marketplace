@@ -15,10 +15,8 @@ export const createCampaign = async (req, res) => {
       roles,
       categories,
       city,
-      budget,
-      deliverables,
-      startDate,
-      endDate
+      budget
+    
     } = req.body;
 
     const campaign = await Campaign.create({
@@ -28,10 +26,7 @@ export const createCampaign = async (req, res) => {
       roles,
       categories,
       city,
-      budget,
-      deliverables,
-      startDate,
-      endDate
+      budget
     });
 
     res.status(201).json({
