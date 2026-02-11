@@ -1,31 +1,43 @@
-// src/models/User.js
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-  name: String,
+const userSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    unique: true,
+    required: true
+  },
+
+  passwordHash: {
+    type: String,
+    required: true
+  },
+
   role: {
     type: String,
-    enum: ["Influencer", "Model", "Photographer", "Brand"]
+    enum: ["Brand", "Influencer", "Model", "Photographer"],
+    required: true
   },
-  city: String,
-  category: String,
-  avatar: String,
 
-  rating: { type: Number, default: 0 },
-  budgetMin: Number,
-  budgetMax: Number,
-
-  isFeatured: { type: Boolean, default: false },
-  isActive: { type: Boolean, default: true },
-  profileComplete: { type: Boolean, default: false },
+  profile: {
+    name: String,
+    city: String,
+    categories: [String],
+    budget: Number,
+    followers: Number,
+    bio: String,
+    socialLinks: Object
+  },
 
   kycStatus: {
     type: String,
     enum: ["Pending", "Verified", "Rejected"],
     default: "Pending"
-  }
- 
+  },
 
+  isActive: {
+    type: Boolean,
+    default: true
+  }
 }, { timestamps: true });
 
-export default mongoose.model("User", UserSchema);
+export default mongoose.model("User", userSchema);
