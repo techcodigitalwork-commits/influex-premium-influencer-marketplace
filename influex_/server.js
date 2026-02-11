@@ -14,6 +14,7 @@ import metaRoutes from "./Routes/meta.routes.js";
 import discoverRoutes from "./Routes/discover.routes.js";
 import campaignRoutes from "./Routes/campaign.routes.js";
 import reviewRoutes from "./Routes/review.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 
 // App init
 const app = express();
@@ -35,7 +36,7 @@ app.use("/api/meta", metaRoutes);
 app.use("/api/discover", discoverRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/reviews", reviewRoutes);
-
+app.use("/profile", profileRoutes);
 // MongoDB connect
 const PORT = process.env.PORT || 5000;
 
