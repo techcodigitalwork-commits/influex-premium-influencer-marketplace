@@ -1,4 +1,6 @@
 import Profile from "../models/profile.js";
+import User from "../models/user.js";
+
 
 // Create Profile
 export const createProfile = async (req, res) => {
@@ -19,6 +21,10 @@ export const createProfile = async (req, res) => {
       role: req.user.role,
       ...data
     });
+    // Auto update profile status
+    await User.findByIdAndUpdate(userId, {
+    profileStatus: "completed"
+     });
 
     res.status(201).json({
       success: true,

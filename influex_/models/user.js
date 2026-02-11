@@ -18,11 +18,11 @@ const userSchema = new mongoose.Schema({
     required: true
   },
 
-  profile: {
-      type : String,
-      enum : ["created"]
-
-  },
+  profileStatus: {
+  type: String,
+  enum: ["pending", "completed"],
+  default: "pending"
+},
 
   kycStatus: {
     type: String,
