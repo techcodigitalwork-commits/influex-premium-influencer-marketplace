@@ -2,7 +2,7 @@ import Campaign from "../models/Campaign.js";
 
 export const createCampaign = async (req, res) => {
   try {
-    if (req.user.role !== "Brand") {
+    if (req.user.role !== "brand") {
       return res.status(403).json({
         success: false,
         message: "Only brands can create campaigns"
