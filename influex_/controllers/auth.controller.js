@@ -29,7 +29,7 @@ export const signup = async (req, res) => {
     const user = await User.create({
       email,
       passwordHash: hashedPassword,
-      role
+      role:role.toLowerCase()
     });
 
     const token = generateToken(user);
