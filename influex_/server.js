@@ -14,7 +14,7 @@ import metaRoutes from "./Routes/meta.routes.js";
 import discoverRoutes from "./Routes/discover.routes.js";
 import campaignRoutes from "./Routes/campaign.routes.js";
 import reviewRoutes from "./Routes/review.routes.js";
-import profileRoutes from "./routes/profile.routes.js";
+import profileRoutes from "./Routes/profile.routes.js";
 
 // App init
 const app = express();
