@@ -19,13 +19,9 @@ const userSchema = new mongoose.Schema({
   },
 
   profile: {
-    name: String,
-    city: String,
-    categories: [String],
-    budget: Number,
-    followers: Number,
-    bio: String,
-    socialLinks: Object
+      type : String,
+      enum : ["created"]
+
   },
 
   kycStatus: {
