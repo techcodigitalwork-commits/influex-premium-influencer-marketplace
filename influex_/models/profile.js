@@ -11,7 +11,7 @@ const profileSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["influencer", "brand", "photographer"],
+      enum: ["influencer", "brand", "photographer","Brand"],
       required: true
     },
 
