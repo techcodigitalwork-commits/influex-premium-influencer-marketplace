@@ -5,7 +5,7 @@ import Notification from "../models/notification.js"; // optional
 
 export const decideApplication = async (req, res) => {
   try {
-    const { decision } = req.body; // accepted / rejected
+    const { decision } = req.body;
 
     if (!["accepted", "rejected"].includes(decision.toLowerCase())) {
       return res.status(400).json({ success: false, message: "Invalid decision" });
@@ -16,26 +16,38 @@ export const decideApplication = async (req, res) => {
       return res.status(404).json({ success: false, message: "Application not found" });
     }
 
+    // ✅ FIX: campaign application se lo
     const campaign = await Campaign.findById(application.campaign);
     if (!campaign) {
       return res.status(404).json({ success: false, message: "Campaign not found" });
     }
 
-    // Only campaign owner (brand) can decide
     if (String(campaign.brandId) !== String(req.user._id)) {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    // Update application status
+    // Update selected application
     application.status = decision.toLowerCase();
     await application.save();
 
-    // If accepted → start campaign + create chat + notification
+    // =============================
+    // IF ACCEPTED
+    // =============================
     if (decision.toLowerCase() === "accepted") {
+
+      // Reject others
+      await Application.updateMany(
+        {
+          campaign: campaign._id,
+          status: "pending",
+          _id: { $ne: application._id }
+        },
+        { status: "rejected" }
+      );
+
       campaign.status = "ongoing";
       await campaign.save();
 
-      // Check if conversation already exists
       let conversation = await Conversation.findOne({
         campaignId: campaign._id,
         participants: { $all: [campaign.brandId, application.influencer] }
@@ -51,7 +63,6 @@ export const decideApplication = async (req, res) => {
         });
       }
 
-      // Optional: Notification
       await Notification.create({
         user: application.influencer,
         message: `Your application for "${campaign.title}" has been accepted! You can now chat with the brand.`,
@@ -67,28 +78,9 @@ export const decideApplication = async (req, res) => {
 
   } catch (error) {
     console.error("Decide Application Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to update application"
-    });
-  }
-};
-export const getApplications = async (req, res) => {
-  try {
-    const applications = await Application.find({
-      campaign: req.params.id
-    }).populate("influencer", "name email");
-
-    res.json({
-      success: true,
-      applications
-    });
-
-  } catch (error) {
-    console.error("Get Applications Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch applications"
     });
   }
 };

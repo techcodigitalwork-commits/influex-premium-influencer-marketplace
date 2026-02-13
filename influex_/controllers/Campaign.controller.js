@@ -65,3 +65,7 @@ export const completeCampaign = async (req, res) => {
 
   res.json({ success: true });
 };
+export const getMyCampaigns = async (req, res) => {
+  const campaigns = await Campaign.find({ brandId: req.user._id });
+  res.json({ success: true, campaigns });
+};
