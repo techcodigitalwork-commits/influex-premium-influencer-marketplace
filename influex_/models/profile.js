@@ -30,8 +30,11 @@ const profileSchema = new mongoose.Schema(
     
 
     // Influencer specific
-    categories: [String],
-    followers: Number,
+    categories: {
+      type : String,
+      required : true 
+    },
+    //followers: Number,
     platform: String, // Instagram, YouTube etc
 
     // Brand specific
@@ -39,8 +42,8 @@ const profileSchema = new mongoose.Schema(
     website: String,
 
     // Photographer specific
-    experience: Number,
-    portfolioLink: String
+   // experience: Number,
+    //portfolioLink: String
   },
   { timestamps: true }
 );
