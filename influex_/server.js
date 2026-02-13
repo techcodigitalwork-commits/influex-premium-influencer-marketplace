@@ -3,6 +3,8 @@ import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import http from "http";
+import { Server } from "socket.io";
 
 // Load env
 dotenv.config();
@@ -15,6 +17,12 @@ import discoverRoutes from "./Routes/discover.routes.js";
 import campaignRoutes from "./Routes/campaign.routes.js";
 import reviewRoutes from "./Routes/review.routes.js";
 import profileRoutes from "./Routes/profile.routes.js";
+import notificationRoutes from "./Routes/notification.routes.js";
+import conversationRoutes from "./Routes/conversation.routes.js"; // add this
+
+// Models
+import Conversation from "./models/Conversation.js";
+import Notification from "./models/notification.model.js";
 
 // App init
 const app = express();
@@ -36,18 +44,82 @@ app.use("/api/meta", metaRoutes);
 app.use("/api/discover", discoverRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/profile", profileRoutes);
-// MongoDB connect
+app.use("/api/profile", profileRoutes);
+app.use("/api/notification", notificationRoutes);
+app.use("/api/conversations", conversationRoutes);
+
+// MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+
+    // Create HTTP server
+    const server = http.createServer(app);
+
+    // Socket.io setup
+    const io = new Server(server, {
+      cors: {
+        origin: "*", // ya frontend origin
+        methods: ["GET", "POST"]
+      }
+    });
+
+    // Socket.io events
+    io.on("connection", socket => {
+      console.log("User connected: ", socket.id);
+
+      socket.on("joinRoom", profileId => {
+        socket.join(profileId);
+        console.log(`User ${profileId} joined room`);
+      });
+
+      socket.on("sendMessage", async ({ conversationId, senderId, text }) => {
+        if (!text || !conversationId || !senderId) return;
+
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation) return;
+
+        const message = { sender: senderId, text, createdAt: new Date() };
+        conversation.messages.push(message);
+        conversation.lastMessage = text;
+        conversation.lastMessageAt = new Date();
+        await conversation.save();
+
+        // Notify participants
+        conversation.participants.forEach(participantId => {
+          io.to(participantId.toString()).emit("receiveMessage", {
+            conversationId,
+            message
+          });
+
+          if (participantId.toString() !== senderId.toString()) {
+            io.to(participantId.toString()).emit("newNotification", {
+              message: `New message from ${senderId}`,
+              conversationId
+            });
+
+            Notification.create({
+              user: participantId,
+              message: `New message from ${senderId}`,
+              type: "new_message",
+              link: `/chat/${conversationId}`
+            });
+          }
+        });
+      });
+
+      socket.on("disconnect", () => {
+        console.log("User disconnected: ", socket.id);
+      });
+    });
+
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT} with Socket.io`);
     });
   })
-  .catch((err) => {
+  .catch(err => {
     console.error("❌ MongoDB connection failed:", err);
   });
