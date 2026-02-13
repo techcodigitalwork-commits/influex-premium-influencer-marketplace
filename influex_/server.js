@@ -22,7 +22,7 @@ import conversationRoutes from "./Routes/conversation.routes.js"; // add this
 
 // Models
 import Conversation from "./models/Conversation.js";
-import Notification from "./models/notification.model.js";
+import Notification from "./models/notification.js";
 
 // App init
 const app = express();

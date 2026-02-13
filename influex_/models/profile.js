@@ -9,9 +9,14 @@ const profileSchema = new mongoose.Schema(
       unique: true
     },
 
+    profileImage: {
+           type: String
+      },
+
+
     role: {
       type: String,
-      enum: ["influencer", "brand", "photographer","Brand"],
+      enum: ["influencer", "brand", "photographer"],
       required: true
     },
 
@@ -22,7 +27,7 @@ const profileSchema = new mongoose.Schema(
 
     bio: String,
     location: String,
-    profileImage: String,
+    
 
     // Influencer specific
     categories: [String],

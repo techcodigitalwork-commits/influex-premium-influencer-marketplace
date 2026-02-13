@@ -66,3 +66,82 @@ export const getMyProfile = async (req, res) => {
     });
   }
 };
+// profile serach influencers
+export const getInfluencers = async (req, res) => {
+  try {
+    const {
+      location,
+      category,
+      minFollowers,
+      maxFollowers,
+      page = 1,
+      limit = 10
+    } = req.query;
+
+    let filter = { role: "influencer" };
+
+    if (location) filter.location = location;
+
+    if (category) {
+      filter.categories = { $in: [category] };
+    }
+
+    if (minFollowers || maxFollowers) {
+      filter.followers = {};
+      if (minFollowers) filter.followers.$gte = Number(minFollowers);
+      if (maxFollowers) filter.followers.$lte = Number(maxFollowers);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const influencers = await Profile.find(filter)
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Profile.countDocuments(filter);
+
+    res.json({
+      success: true,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      data: influencers
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+// search brands 
+export const getBrands = async (req, res) => {
+  try {
+    const {
+      location,
+      page = 1,
+      limit = 10
+    } = req.query;
+
+    let filter = { role: "brand" };
+
+    if (location) filter.location = location;
+
+    const skip = (page - 1) * limit;
+
+    const brands = await Profile.find(filter)
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Profile.countDocuments(filter);
+
+    res.json({
+      success: true,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      data: brands
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

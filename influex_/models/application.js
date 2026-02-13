@@ -18,4 +18,9 @@ const applicationSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+applicationSchema.index(
+  { campaign: 1, influencer: 1 },
+  { unique: true }
+);
+
 export default mongoose.model("Application", applicationSchema);
