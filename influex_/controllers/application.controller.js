@@ -1,7 +1,7 @@
 import Application from "../models/application.js";
 import Campaign from "../models/Campaign.js";
 import Conversation from "../models/Conversation.js";
-import Notification from "../models/Notification.js"; // optional
+import Notification from "../models/notification.js"; // optional
 
 export const decideApplication = async (req, res) => {
   try {
