@@ -7,7 +7,7 @@ import {
   completeCampaign
 } from "../controllers/Campaign.controller.js";
 
-import Applications  from "../controllers/application.controller.js";
+import {getApplications}  from "../controllers/application.controller.js";
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ router.get("/matching", auth, matchingCampaigns);
 router.post("/:id/complete", auth, completeCampaign);
 
 // 👉 GET APPLICATIONS
-router.get("/:id/applications", auth, Applications);
+router.get("/:id/applications", auth, getApplications);
 
 export default router;
 

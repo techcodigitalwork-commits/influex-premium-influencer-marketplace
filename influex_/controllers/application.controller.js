@@ -73,3 +73,23 @@ export const decideApplication = async (req, res) => {
     });
   }
 };
+export const getApplications = async (req, res) => {
+  try {
+    const applications = await Application.find({
+      campaign: req.params.id
+    }).populate("influencer", "name email");
+
+    res.json({
+      success: true,
+      applications
+    });
+
+  } catch (error) {
+    console.error("Get Applications Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch applications"
+    });
+  }
+};
+
