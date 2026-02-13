@@ -11,14 +11,14 @@ router.get("/me", auth, getMyProfile);
 
 router.get(
   "/influencers",
-  verifyToken,
+  auth,
   auth("brand"),
   getInfluencers
 );
 
 router.get(
   "/brands",
-  verifyToken,
+  auth,
   auth("influencer"),
   getBrands
 );
