@@ -1,7 +1,7 @@
 import express from "express";
 import { createProfile, getMyProfile } from "../controllers/profile.controller.js";
 import auth from "../middlewares/auth.middleware.js";
-import { verifyToken, authorizeRoles } from "../middlewares/auth.middleware.js";
+import { verifyToken, auth } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -12,14 +12,14 @@ router.get("/me", auth, getMyProfile);
 router.get(
   "/influencers",
   verifyToken,
-  authorizeRoles("brand"),
+  auth("brand"),
   getInfluencers
 );
 
 router.get(
   "/brands",
   verifyToken,
-  authorizeRoles("influencer"),
+  auth("influencer"),
   getBrands
 );
 
