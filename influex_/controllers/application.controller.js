@@ -1,8 +1,12 @@
 import Application from "../models/application.js";
 import Campaign from "../models/Campaign.js";
 import Conversation from "../models/Conversation.js";
-import Notification from "../models/notification.js"; // optional
+import Notification from "../models/notification.js";
 
+
+// ======================================================
+// DECIDE APPLICATION (Brand Accept / Reject)
+// ======================================================
 export const decideApplication = async (req, res) => {
   try {
     const { decision } = req.body;
@@ -16,7 +20,6 @@ export const decideApplication = async (req, res) => {
       return res.status(404).json({ success: false, message: "Application not found" });
     }
 
-    // ✅ FIX: campaign application se lo
     const campaign = await Campaign.findById(application.campaign);
     if (!campaign) {
       return res.status(404).json({ success: false, message: "Campaign not found" });
@@ -26,16 +29,13 @@ export const decideApplication = async (req, res) => {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    // Update selected application
     application.status = decision.toLowerCase();
     await application.save();
 
-    // =============================
-    // IF ACCEPTED
-    // =============================
+    // If accepted
     if (decision.toLowerCase() === "accepted") {
 
-      // Reject others
+      // Reject other pending applications
       await Application.updateMany(
         {
           campaign: campaign._id,
@@ -85,3 +85,97 @@ export const decideApplication = async (req, res) => {
   }
 };
 
+
+// ======================================================
+// GET APPLICATIONS FOR A CAMPAIGN
+// ======================================================
+export const getApplications = async (req, res) => {
+  try {
+    const applications = await Application.find({
+      campaign: req.params.id
+    }).populate("influencer", "name email");
+
+    return res.json({
+      success: true,
+      applications
+    });
+
+  } catch (error) {
+    console.error("Get Applications Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch applications"
+    });
+  }
+};
+
+
+// ======================================================
+// APPLY TO CAMPAIGN (Influencer)
+// ======================================================
+export const applyToCampaign = async (req, res) => {
+  try {
+    const campaignId = req.params.id;
+    const influencerId = req.user._id;
+
+    const campaign = await Campaign.findById(campaignId);
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found"
+      });
+    }
+
+    if (String(campaign.brandId) === String(influencerId)) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot apply to your own campaign"
+      });
+    }
+
+    if (campaign.status !== "open") {
+      return res.status(400).json({
+        success: false,
+        message: "Campaign is not open for applications"
+      });
+    }
+
+    const alreadyApplied = await Application.findOne({
+      campaign: campaignId,
+      influencer: influencerId
+    });
+
+    if (alreadyApplied) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already applied to this campaign"
+      });
+    }
+
+    const application = await Application.create({
+      campaign: campaignId,
+      influencer: influencerId,
+      status: "pending"
+    });
+
+    await Notification.create({
+      user: campaign.brandId,
+      message: `New application received for "${campaign.title}"`,
+      type: "new_application",
+      read: false
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Application submitted successfully",
+      application
+    });
+
+  } catch (error) {
+    console.error("Apply To Campaign Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to apply to campaign"
+    });
+  }
+};
