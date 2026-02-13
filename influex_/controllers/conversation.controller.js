@@ -1,5 +1,5 @@
 import Conversation from "../models/Conversation.js";
-import Notification from "../models/notification.model.js";
+import Notification from "../models/notification.js";
 
 // 1️⃣ Create or fetch conversation (if already exists)
 export const getOrCreateConversation = async (req, res) => {

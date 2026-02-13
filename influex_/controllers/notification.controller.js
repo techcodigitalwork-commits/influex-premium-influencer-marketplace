@@ -1,4 +1,4 @@
-import Notification from "../models/notification.model.js";
+import Notification from "../models/notification.js";
 
 // 1️⃣ Create Notification (used internally)
 export const createNotification = async ({ userId, message, type = "application_accepted", link = "" }) => {

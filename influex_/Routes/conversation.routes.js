@@ -1,5 +1,5 @@
 import express from "express";
-import { verifyToken } from "../middleware/auth.js";
+import { verifyToken } from "../middlewares/auth.middleware.js";
 import { getOrCreateConversation, sendMessage, getMessages } from "../controllers/conversation.controller.js";
 
 const router = express.Router();
