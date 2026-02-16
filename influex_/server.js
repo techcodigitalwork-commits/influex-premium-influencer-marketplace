@@ -116,10 +116,12 @@ mongoose
       });
     });
 
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT} with Socket.io`);
-    });
+   server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT} with Socket.io`);
+});
+
   })
   .catch(err => {
     console.error("❌ MongoDB connection failed:", err);
   });
+
