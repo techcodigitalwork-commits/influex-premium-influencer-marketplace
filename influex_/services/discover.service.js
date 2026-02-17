@@ -1,48 +1,51 @@
-// src/services/discover.service.js
-import User from "../models/user.js";
+import Profile from "../models/profile.js";
 
 export const searchCreators = async (q) => {
   const {
     role,
-    city,
-    category,
-    budgetMin,
-    budgetMax,
+    location,
+    categories,
+    search,
     page = 1,
     limit = 12
   } = q;
 
-  const filter = {
-    kycStatus: "Verified",
-    isActive: true
-  };
+  const filter = {};
 
+  // Role filter
   if (role) filter.role = role;
-  if (city) filter["profile.city"] = city;
-  if (category) filter["profile.category"] = category;
 
-  if (budgetMin || budgetMax) {
-    filter["profile.budget"] = {};
-    if (budgetMin) filter["profile.budget"].$gte = Number(budgetMin);
-    if (budgetMax) filter["profile.budget"].$lte = Number(budgetMax);
+  // Location filter
+  if (location) {
+    filter.location = { $regex: location, $options: "i" };
+  }
+
+  // Category filter
+  if (categories) {
+    filter.categories = { $regex: categories, $options: "i" };
+  }
+
+  // Name search
+  if (search) {
+    filter.name = { $regex: search, $options: "i" };
   }
 
   const skip = (page - 1) * limit;
 
-  const [results, total] = await Promise.all([
-    User.find(filter)
-      .select("name role profile.city profile.category profile.budget rating avatar")
+  const [profiles, total] = await Promise.all([
+    Profile.find(filter)
+      .populate("user", "email role") // optional fields
       .skip(skip)
       .limit(Number(limit))
       .lean(),
 
-    User.countDocuments(filter)
+    Profile.countDocuments(filter)
   ]);
 
   return {
     total,
     page: Number(page),
     limit: Number(limit),
-    results
+    results: profiles
   };
 };

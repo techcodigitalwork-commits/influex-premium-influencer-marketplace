@@ -3,7 +3,8 @@ import {
   createProfile, 
   getMyProfile, 
   getInfluencers, 
-  getBrands 
+  getBrands ,
+  updateProfile
 } from "../controllers/profile.controller.js";
 
 import auth, { authorizeRoles } from "../middlewares/auth.middleware.js";
@@ -29,5 +30,11 @@ router.get(
   authorizeRoles("influencer"),
   getBrands
 );
+
+router.put(
+  "/",
+  auth,
+  updateProfile
+)
 
 export default router;

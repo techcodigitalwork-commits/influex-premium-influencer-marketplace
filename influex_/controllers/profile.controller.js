@@ -145,3 +145,52 @@ export const getBrands = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// update profile
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const profile = await Profile.findOne({ user: userId });
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found"
+      });
+    }
+
+    // Allowed fields to update
+    const allowedUpdates = [
+      "name",
+      "bio",
+      "location",
+      "categories",
+      "platform",
+      "companyName",
+      "website",
+      "industry",
+      "profileImage"
+    ];
+
+    allowedUpdates.forEach(field => {
+      if (req.body[field] !== undefined) {
+        profile[field] = req.body[field];
+      }
+    });
+
+    await profile.save();
+
+    return res.json({
+      success: true,
+      message: "Profile updated successfully",
+      profile
+    });
+
+  } catch (error) {
+    console.error("Update Profile Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update profile"
+    });
+  }
+};

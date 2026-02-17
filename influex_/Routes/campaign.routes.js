@@ -10,7 +10,7 @@ import {
 
 import { getApplications } from "../controllers/application.controller.js";
 import { applyToCampaign } from "../controllers/application.controller.js";
-
+import { decideApplication } from "../controllers/application.controller.js";
 const router = express.Router();
 
 // CREATE CAMPAIGN (Brand)
@@ -34,5 +34,12 @@ router.post(
   authorizeRoles("influencer"),
   applyToCampaign
 );
+router.put(
+  "/applications/:id/decide",
+  auth,
+  authorizeRoles("brand"),
+  decideApplication
+);
+
 
 export default router;

@@ -1,5 +1,4 @@
-// src/services/meta.service.js
-import User from "../models/user.js";
+import Profile from "../models/profile.js";
 import { getCache, setCache } from "../utils/redis.js";
 
 export const fetchCities = async () => {
@@ -8,19 +7,16 @@ export const fetchCities = async () => {
   const cached = await getCache(cacheKey);
   if (cached) return cached;
 
-  const cities = await User.distinct("city", {
-    role: { $in: ["Influencer", "Model", "Photographer"] },
-    kycStatus: "Verified",
-    isActive: true,
-    city: { $ne: null }
+  const cities = await Profile.distinct("location", {
+    location: { $ne: null }
   });
 
-  // Clean + sort
   const formatted = cities
     .map(c => c.trim())
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
   await setCache(cacheKey, formatted, 21600); // 6 hours
+
   return formatted;
 };

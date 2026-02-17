@@ -1,84 +1,50 @@
-// src/services/public.service.js
+import Profile from "../models/profile.js";
 import User from "../models/user.js";
 import { getCache, setCache } from "../utils/redis.js";
-
-/* ================= FEATURED TALENT ================= */
 
 export const getFeaturedCreators = async ({ role, limit }) => {
   const cacheKey = `home:featured:${role || "all"}:${limit}`;
   const cached = await getCache(cacheKey);
   if (cached) return cached;
 
-  const filter = {
-    kycStatus: "Verified",
-    isActive: true,
-    profileComplete: true,
-    role: role ? role : { $in: ["Influencer", "Model", "Photographer"] }
-  };
+  const filter = {};
+  if (role) filter.role = role;
 
-  const creators = await User.find(filter)
-    .sort({ isFeatured: -1, rating: -1, updatedAt: -1 })
+  const profiles = await Profile.find(filter)
+    .sort({ updatedAt: -1 })
     .limit(limit)
-    .select("name role city category rating budgetMin budgetMax avatar");
+    .populate("user", "avatar rating isFeatured");
 
-  const formatted = creators.map(u => ({
-    id: u._id,
-    name: u.name,
-    role: u.role,
-    city: u.city,
-    category: u.category,
-    rating: u.rating,
-    priceRange: `₹${u.budgetMin} - ₹${u.budgetMax}`,
-    avatar: u.avatar,
-    profileUrl: `/profile/${u._id}`
+  const formatted = profiles.map(p => ({
+    id: p._id,
+    name: p.name,
+    role: p.role,
+    city: p.location,
+    category: p.categories,
+    rating: p.user?.rating || 0,
+    avatar: p.profileImage || p.user?.avatar,
+    profileUrl: `/profile/${p.user?._id}`
   }));
 
-  await setCache(cacheKey, formatted, 1800); // 30 min
+  await setCache(cacheKey, formatted, 1800);
   return formatted;
 };
 
-/* ================= STATS ================= */
-
-export const getPublicStats = async () => {
-  const cacheKey = "home:stats";
-  const cached = await getCache(cacheKey);
-  if (cached) return cached;
-
-  const creators = await User.countDocuments({
-    role: { $in: ["Influencer", "Model", "Photographer"] },
-    kycStatus: "Verified"
-  });
-
-  const brands = await User.countDocuments({ role: "Brand" });
-
-  const stats = {
-    creators,
-    brands,
-    campaignsCompleted: 0 // future: campaigns collection
-  };
-
-  await setCache(cacheKey, stats, 21600); // 6 hours
-  return stats;
-};
-
-/* ================= TOP CITIES ================= */
 
 export const getTopCities = async () => {
   const cacheKey = "home:topCities";
   const cached = await getCache(cacheKey);
   if (cached) return cached;
 
-  const cities = await User.aggregate([
+  const cities = await Profile.aggregate([
     {
       $match: {
-        role: { $in: ["Influencer", "Model", "Photographer"] },
-        kycStatus: "Verified",
-        isActive: true
+        location: { $ne: null }
       }
     },
     {
       $group: {
-        _id: "$city",
+        _id: "$location",
         count: { $sum: 1 }
       }
     },
@@ -91,6 +57,14 @@ export const getTopCities = async () => {
     count: c.count
   }));
 
-  await setCache(cacheKey, formatted, 43200); // 12 hours
+  await setCache(cacheKey, formatted, 43200);
   return formatted;
 };
+const creators = await User.countDocuments({
+  role: "influencer",
+  kycStatus: "Verified"
+});
+
+const brands = await User.countDocuments({
+  role: "brand"
+});
