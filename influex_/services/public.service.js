@@ -60,11 +60,28 @@ export const getTopCities = async () => {
   await setCache(cacheKey, formatted, 43200);
   return formatted;
 };
-const creators = await User.countDocuments({
-  role: "influencer",
-  kycStatus: "Verified"
-});
+export const getPublicStats = async () => {
+  const cacheKey = "home:stats";
 
-const brands = await User.countDocuments({
-  role: "brand"
-});
+  const cached = await getCache(cacheKey);
+  if (cached) return cached;
+
+  const creators = await User.countDocuments({
+    role: "influencer",
+    kycStatus: "Verified"
+  });
+
+  const brands = await User.countDocuments({
+    role: "brand"
+  });
+
+  const stats = {
+    creators,
+    brands,
+    campaignsCompleted: 0
+  };
+
+  await setCache(cacheKey, stats, 21600);
+  return stats;
+};
+
