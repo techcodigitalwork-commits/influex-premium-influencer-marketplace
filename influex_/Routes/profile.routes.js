@@ -4,8 +4,7 @@ import {
   getMyProfile, 
   getInfluencers, 
   getBrands ,
-  updateProfile,
-  influencers
+  updateProfile
 } from "../controllers/profile.controller.js";
 
 import auth, { authorizeRoles } from "../middlewares/auth.middleware.js";
