@@ -13,10 +13,15 @@ const profileSchema = new mongoose.Schema(
            type: String
       },
 
+    followers: {
+             type: Number,
+             required: true,
+             min: 0
+             },
 
     role: {
       type: String,
-      enum: ["influencer", "brand", "photographer"],
+      enum: ["influencer", "brand"],
       required: true
     },
 
