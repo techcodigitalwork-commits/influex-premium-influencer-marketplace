@@ -38,7 +38,7 @@ router.put(
   updateProfile
 )
 
-router.get("/influencers", influencers);
+
 
 
 export default router;

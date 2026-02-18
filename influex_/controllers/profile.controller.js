@@ -194,31 +194,3 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
-export const influencer = async (req, res) => {
-  try {
-    const { min, max } = req.query;
-
-    const filter = {};
-
-    if (min || max) {
-      filter.followers = {};
-
-      if (min) filter.followers.$gte = Number(min);
-      if (max) filter.followers.$lte = Number(max);
-    }
-
-    const influencers = await Profile.find(filter);
-
-    res.status(200).json({
-      success: true,
-      count: influencers.length,
-      data: influencers
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
