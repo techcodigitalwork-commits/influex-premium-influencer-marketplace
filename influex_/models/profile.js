@@ -5,7 +5,7 @@ const profileSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      //required: true,
       unique: true
     },
 
@@ -15,19 +15,19 @@ const profileSchema = new mongoose.Schema(
 
     followers: {
              type: Number,
-             required: true,
+        //     required: true,
              min: 0
              },
 
     role: {
       type: String,
       enum: ["influencer", "brand"],
-      required: true
+      //required: true
     },
 
     name: {
       type: String,
-      required: true
+      //required: true
     },
 
     bio: String,
@@ -37,7 +37,7 @@ const profileSchema = new mongoose.Schema(
     // Influencer specific
     categories: {
       type : String,
-      required : true 
+      //required : true 
     },
     //followers: Number,
     platform: String, // Instagram, YouTube etc
