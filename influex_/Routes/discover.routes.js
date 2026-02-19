@@ -4,6 +4,6 @@ import { search } from "../controllers/discover.controller.js";
 
 const router = express.Router();
 
-router.get("/search", search);
+router.get("/search",auth, search);
 
 export default router;
