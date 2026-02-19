@@ -1,5 +1,5 @@
 // src/controllers/meta.controller.js
-import { fetchCities } from "../services/meta.service.js";
+import { fetchCities,fetchCategories } from "../services/meta.service.js";
 
 export const getCities = async (req, res) => {
   const cities = await fetchCities();
