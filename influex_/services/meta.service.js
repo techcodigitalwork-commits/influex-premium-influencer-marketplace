@@ -20,3 +20,22 @@ export const fetchCities = async () => {
 
   return formatted;
 };
+export const fetchCategories = async () => {
+  const cacheKey = "meta:categories";
+
+  const cached = await getCache(cacheKey);
+  if (cached) return cached;
+
+  const categories = await Profile.distinct("categories", {
+    categories: { $ne: null }
+  });
+
+  const formatted = categories
+    .map(c => c.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+
+  await setCache(cacheKey, formatted, 21600); // 6 hours
+
+  return formatted;
+};

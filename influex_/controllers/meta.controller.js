@@ -8,3 +8,7 @@ export const getCities = async (req, res) => {
     data: cities
   });
 };
+export const getCategories = async (req, res) => {
+  const categories = await fetchCategories();
+  res.json({ success: true, data: categories });
+};
