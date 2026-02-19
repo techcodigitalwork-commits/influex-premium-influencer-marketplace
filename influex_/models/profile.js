@@ -14,7 +14,7 @@ const profileSchema = new mongoose.Schema(
       },
 
     followers: {
-             type: Number,
+             type: String,
         //     required: true,
              min: 0
              },
