@@ -1,5 +1,5 @@
 import Campaign from "../models/Campaign.js";
-import Profile from "../models/Profile.js";
+import Profile from "../models/profile.js";
 
 export const createCampaign = async (req, res) => {
   try {
