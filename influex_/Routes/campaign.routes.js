@@ -34,7 +34,12 @@ router.post("/:id/apply", auth, authorizeRoles("influencer"), applyToCampaign);
 router.post("/:id/complete", auth, authorizeRoles("brand"), completeCampaign);
 
 // DECIDE
-router.put("/applications/:id/decide", auth, authorizeRoles("brand"), decideApplication);
+router.put("/:id/decide",
+  auth,
+  authorizeRoles("brand"),
+  decideApplication
+);
+//router.put("/applications/:id/decide", auth, authorizeRoles("brand"), decideApplication);
 
 // ⚠️ ALWAYS LAST
 router.get("/:id", auth, getCampaignById);
