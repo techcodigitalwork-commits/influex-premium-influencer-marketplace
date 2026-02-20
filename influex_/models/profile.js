@@ -45,7 +45,8 @@ const profileSchema = new mongoose.Schema(
     // Brand specific
     companyName: String,
     website: String,
-    industry : String
+    industry : String,
+    phone : Number
 
     // Photographer specific
    // experience: Number,
