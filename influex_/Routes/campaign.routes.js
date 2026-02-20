@@ -20,7 +20,9 @@ router.post("/", auth, authorizeRoles("brand"), createCampaign);
 
 // MATCHING CAMPAIGNS (Influencer)
 router.get("/matching", auth, authorizeRoles("influencer"), matchingCampaigns);
-
+// GET MY CAMPAIGNS (Brand)
+router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
+router.get("/:id", auth, getCampaignById);
 // COMPLETE CAMPAIGN
 router.post("/:id/complete", auth, authorizeRoles("brand"), completeCampaign);
 
@@ -28,8 +30,8 @@ router.post("/:id/complete", auth, authorizeRoles("brand"), completeCampaign);
 router.get("/:id/applications", auth, authorizeRoles("brand"), getApplications);
 
 // GET MY CAMPAIGNS (Brand)
-router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
-router.get("/:id", auth, getCampaignById);
+//router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
+//router.get("/:id", auth, getCampaignById);
 // influencers apply 
 router.post(
   "/:id/apply",
