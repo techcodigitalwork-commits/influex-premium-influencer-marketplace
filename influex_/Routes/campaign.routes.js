@@ -15,36 +15,29 @@ import { decideApplication } from "../controllers/application.controller.js";
 
 const router = express.Router();
 
-// CREATE CAMPAIGN (Brand)
+// CREATE CAMPAIGN
 router.post("/", auth, authorizeRoles("brand"), createCampaign);
 
-// MATCHING CAMPAIGNS (Influencer)
+// MATCHING
 router.get("/matching", auth, authorizeRoles("influencer"), matchingCampaigns);
-// GET MY CAMPAIGNS (Brand)
-router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
-router.get("/:id", auth, getCampaignById);
-// COMPLETE CAMPAIGN
-router.post("/:id/complete", auth, authorizeRoles("brand"), completeCampaign);
 
-// GET APPLICATIONS (Brand)
+// GET MY CAMPAIGNS
+router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
+
+// GET APPLICATIONS
 router.get("/:id/applications", auth, authorizeRoles("brand"), getApplications);
 
-// GET MY CAMPAIGNS (Brand)
-//router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
-//router.get("/:id", auth, getCampaignById);
-// influencers apply 
-router.post(
-  "/:id/apply",
-  auth,
-  authorizeRoles("influencer"),
-  applyToCampaign
-);
-router.put(
-  "/applications/:id/decide",
-  auth,
-  authorizeRoles("brand"),
-  decideApplication
-);
+// APPLY
+router.post("/:id/apply", auth, authorizeRoles("influencer"), applyToCampaign);
+
+// COMPLETE
+router.post("/:id/complete", auth, authorizeRoles("brand"), completeCampaign);
+
+// DECIDE
+router.put("/applications/:id/decide", auth, authorizeRoles("brand"), decideApplication);
+
+// ⚠️ ALWAYS LAST
+router.get("/:id", auth, getCampaignById);
 
 
 export default router;
