@@ -5,12 +5,14 @@ import {
   createCampaign,
   matchingCampaigns,
   completeCampaign,
-  getMyCampaigns
+  getMyCampaigns,
+  getCampaignById
 } from "../controllers/Campaign.controller.js";
 
 import { getApplications } from "../controllers/application.controller.js";
 import { applyToCampaign } from "../controllers/application.controller.js";
 import { decideApplication } from "../controllers/application.controller.js";
+
 const router = express.Router();
 
 // CREATE CAMPAIGN (Brand)
@@ -27,6 +29,7 @@ router.get("/:id/applications", auth, authorizeRoles("brand"), getApplications);
 
 // GET MY CAMPAIGNS (Brand)
 router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
+router.get("/:id", auth, getCampaignById);
 // influencers apply 
 router.post(
   "/:id/apply",

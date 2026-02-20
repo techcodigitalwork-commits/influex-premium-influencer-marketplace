@@ -118,7 +118,7 @@ export const applyToCampaign = async (req, res) => {
   try {
     const campaignId = req.params.id;
     const influencerId = req.user._id;
-    
+
      if (!mongoose.Types.ObjectId.isValid(campaignId)) {
       return res.status(400).json({
         success: false,

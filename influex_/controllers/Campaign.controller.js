@@ -69,3 +69,28 @@ export const getMyCampaigns = async (req, res) => {
   const campaigns = await Campaign.find({ brandId: req.user._id });
   res.json({ success: true, campaigns });
 };
+export const getCampaignById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const campaign = await Campaign.findById(id);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      data: campaign
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch campaign"
+    });
+  }
+};
