@@ -1,25 +1,34 @@
-import Notification from "../models/notification.js";
+import { createNotificationService } from "../services/notification.service.js";
 
-// 1️⃣ Create Notification (used internally)
-export const createNotification = async ({ userId, message, type = "application_accepted", link = "" }) => {
+// Create notification via API (optional)
+export const createNotification = async (req, res) => {
   try {
-    const notification = await Notification.create({
-      user: userId,
+    const { userId, message, type, link } = req.body;
+
+    const notification = await createNotificationService({
+      userId,
       message,
       type,
       link
     });
-    return notification;
+
+    res.status(201).json({
+      success: true,
+      data: notification
+    });
   } catch (error) {
-    console.error("Notification creation error:", error);
+    console.error("Create notification error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create notification"
+    });
   }
 };
 
-// 2️⃣ Get Notifications for logged-in user
 export const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ user: req.user.profileId })
-      .sort({ createdAt: -1 }); // latest first
+    const notifications = await Notification.find({ user: req.user._id })
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,
@@ -31,7 +40,6 @@ export const getNotifications = async (req, res) => {
   }
 };
 
-// 3️⃣ Mark notification as read
 export const markNotificationRead = async (req, res) => {
   try {
     const { id } = req.params;
@@ -41,8 +49,7 @@ export const markNotificationRead = async (req, res) => {
       return res.status(404).json({ success: false, message: "Notification not found" });
     }
 
-    // Only owner can mark as read
-    if (String(notification.user) !== String(req.user.profileId)) {
+    if (String(notification.user) !== String(req.user._id)) {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
