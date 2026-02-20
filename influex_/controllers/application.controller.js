@@ -187,3 +187,20 @@ export const applyToCampaign = async (req, res) => {
     });
   }
 };
+export const getMyApplications = async (req, res) => {
+  try {
+    const applications = await Application.find({
+      influencer: req.user._id
+    }).populate("campaign");
+
+    res.status(200).json({
+      success: true,
+      applications
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
