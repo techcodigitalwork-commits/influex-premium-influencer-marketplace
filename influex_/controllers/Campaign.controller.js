@@ -1,4 +1,5 @@
 import Campaign from "../models/Campaign.js";
+import Profile from "../models/Profile.js";
 
 export const createCampaign = async (req, res) => {
   try {
@@ -46,18 +47,34 @@ export const createCampaign = async (req, res) => {
 
 
 export const matchingCampaigns = async (req, res) => {
-  const user = req.user;
+  try {
+    const user = req.user;
 
-  const campaigns = await Campaign.find({
-  status: "OPEN",
-  roles: { $in: [user.role] },
-  city: user.profile.city,
-  budget: { $gte: user.profile.budget }
-});
+    // 🔥 Get profile separately
+    const profile = await Profile.findOne({ user: user._id });
 
-  res.json({ data: campaigns });
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found"
+      });
+    }
+
+    const campaigns = await Campaign.find({
+      status: "OPEN",
+      city: profile.location   // ✅ using profile.location
+    });
+
+    res.json({ success: true, data: campaigns });
+
+  } catch (error) {
+    console.error("Matching Campaign Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch matching campaigns"
+    });
+  }
 };
-
 export const completeCampaign = async (req, res) => {
   await Campaign.findByIdAndUpdate(req.params.id, {
     status: "COMPLETED"
