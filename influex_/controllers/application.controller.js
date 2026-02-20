@@ -1,8 +1,9 @@
 import Application from "../models/application.js";
 import Campaign from "../models/Campaign.js";
 import Conversation from "../models/Conversation.js";
-import Notification from "../models/notification.js";
-
+//import Notification from "../models/notification.js";
+import { createNotificationService } from "../services/notification.service.js";
+import mongoose from "mongoose";
 
 // ======================================================
 // DECIDE APPLICATION (Brand Accept / Reject)
@@ -63,12 +64,12 @@ export const decideApplication = async (req, res) => {
         });
       }
 
-      await Notification.create({
-        user: application.influencer,
-        message: `Your application for "${campaign.title}" has been accepted! You can now chat with the brand.`,
-        type: "application_accepted",
-        read: false
-      });
+      await createNotificationService({
+      userId: application.influencer,
+       message: `Your application for "${campaign.title}" has been accepted! You can now chat with the brand.`,
+       type: "application_accepted",
+       link: `/campaign/${campaign._id}`
+    });
     }
 
     return res.json({
@@ -117,6 +118,13 @@ export const applyToCampaign = async (req, res) => {
   try {
     const campaignId = req.params.id;
     const influencerId = req.user._id;
+    
+     if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Campaign ID"
+      });
+    }
 
     const campaign = await Campaign.findById(campaignId);
     if (!campaign) {
@@ -158,12 +166,12 @@ export const applyToCampaign = async (req, res) => {
       status: "pending"
     });
 
-    await Notification.create({
-      user: campaign.brandId,
-      message: `New application received for "${campaign.title}"`,
-      type: "new_application",
-      read: false
-    });
+  await createNotificationService({
+     userId: campaign.brandId,
+     message: `New application received for "${campaign.title}"`,
+     type: "new_application",
+     link: `/campaign/${campaign._id}`
+   });
 
     return res.status(201).json({
       success: true,
