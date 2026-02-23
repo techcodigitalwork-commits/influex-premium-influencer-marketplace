@@ -19,7 +19,7 @@ import reviewRoutes from "./Routes/review.routes.js";
 import profileRoutes from "./Routes/profile.routes.js";
 import notificationRoutes from "./Routes/notification.routes.js";
 import conversationRoutes from "./Routes/conversation.routes.js"; // add this
-
+import s3Routes from "./Routes/s3.routes.js";
 // Models
 import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
@@ -47,7 +47,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/conversations", conversationRoutes);
-
+app.use("/api", s3Routes);
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
