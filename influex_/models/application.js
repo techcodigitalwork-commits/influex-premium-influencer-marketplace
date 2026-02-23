@@ -6,7 +6,7 @@ const applicationSchema = new mongoose.Schema({
     ref: "Campaign",
     required: true
   },
-  creatorId: {
+  influencerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true
