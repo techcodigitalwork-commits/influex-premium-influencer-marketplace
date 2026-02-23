@@ -61,7 +61,7 @@ export const matchingCampaigns = async (req, res) => {
     }
 
     const campaigns = await Campaign.find({
-      status: "OPEN",
+      status: "open",
       city: profile.location   // ✅ using profile.location
     });
 
@@ -77,7 +77,7 @@ export const matchingCampaigns = async (req, res) => {
 };
 export const completeCampaign = async (req, res) => {
   await Campaign.findByIdAndUpdate(req.params.id, {
-    status: "COMPLETED"
+    status: "completed"
   });
 
   res.json({ success: true });
