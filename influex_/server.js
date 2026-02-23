@@ -1,9 +1,10 @@
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
+
 import dotenv from "dotenv";
 // Load env
 dotenv.config();
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
 import mongoose from "mongoose";
 import http from "http";
 import { Server } from "socket.io";
