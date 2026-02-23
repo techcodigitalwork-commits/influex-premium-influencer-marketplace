@@ -127,6 +127,6 @@ mongoose
   .catch(err => {
     console.error("❌ MongoDB connection failed:", err);
   });
-export const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-});
+console.log("ID:", process.env.AWS_ACCESS_KEY_ID);
+console.log("SECRET:", process.env.AWS_SECRET_ACCESS_KEY);
+console.log("REGION:", process.env.AWS_REGION);
