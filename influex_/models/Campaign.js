@@ -17,7 +17,7 @@ const campaignSchema = new mongoose.Schema({
 
   roles: [{
     type: String,
-    enum: ["INFLUENCER", "MODEL", "PHOTOGRAPHER"],
+    enum: ["influencers","brand"],
     required: true
   }],
 
@@ -40,8 +40,8 @@ const campaignSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["OPEN", "ONGOING", "COMPLETED"],
-    default: "OPEN"
+    enum: ["open", "ongoing", "completed"],
+    default: "open"
   },
 
   applicationsCount: {
