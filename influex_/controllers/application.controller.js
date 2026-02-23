@@ -116,10 +116,13 @@ export const getApplications = async (req, res) => {
 // ======================================================
 export const applyToCampaign = async (req, res) => {
   try {
+    console.log("REQ.PARAMS:", req.params);
+    console.log("REQ.USER:", req.user);
+
     const campaignId = req.params.id;
     const influencerId = req.user._id;
 
-     if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid Campaign ID"
@@ -127,13 +130,14 @@ export const applyToCampaign = async (req, res) => {
     }
 
     const campaign = await Campaign.findById(campaignId);
+    console.log("Campaign fetched:", campaign);
+
     if (!campaign) {
       return res.status(404).json({
         success: false,
         message: "Campaign not found"
       });
     }
-
     if (String(campaign.brandId) === String(influencerId)) {
       return res.status(400).json({
         success: false,
