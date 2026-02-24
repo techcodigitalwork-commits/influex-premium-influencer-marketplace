@@ -4,14 +4,16 @@ export const createNotificationService = async ({
   userId,
   message,
   type = "application_accepted",
-  link = ""
+  link = "",
+  applicationId = null
 }) => {
   try {
     const notification = await Notification.create({
       user: userId,
       message,
       type,
-      link
+      link,
+      applicationId 
     });
 
     return notification;

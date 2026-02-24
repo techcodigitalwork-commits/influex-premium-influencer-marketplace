@@ -13,8 +13,9 @@ const notificationSchema = new mongoose.Schema(
     },
     applicationId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Application"
-               },
+      ref: "Application",
+      default: null
+    },
     type: {
       type: String,
       enum: [
