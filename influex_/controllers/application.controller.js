@@ -21,7 +21,7 @@ export const decideApplication = async (req, res) => {
       return res.status(404).json({ success: false, message: "Application not found" });
     }
 
-    const campaign = await Campaign.findById(application.campaign);
+    const campaign = await Campaign.findById(application.campaignId);
     if (!campaign) {
       return res.status(404).json({ success: false, message: "Campaign not found" });
     }
@@ -51,13 +51,13 @@ export const decideApplication = async (req, res) => {
 
       let conversation = await Conversation.findOne({
         campaignId: campaign._id,
-        participants: { $all: [campaign.brandId, application.influencer] }
+        participants: { $all: [campaign.brandId, application.influencerId] }
       });
 
       if (!conversation) {
         conversation = await Conversation.create({
           campaignId: campaign._id,
-          participants: [campaign.brandId, application.influencer],
+          participants: [campaign.brandId, application.influencerId],
           messages: [],
           lastMessage: "Application accepted! Start your chat.",
           lastMessageAt: new Date()
