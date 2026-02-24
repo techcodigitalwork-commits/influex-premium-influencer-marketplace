@@ -68,7 +68,8 @@ export const decideApplication = async (req, res) => {
       userId: application.influencerId,
        message: `Your application for "${campaign.title}" has been accepted! You can now chat with the brand.`,
        type: "application_accepted",
-       link: `/campaign/${campaign._id}`
+       link: `/campaign/${campaign._id}`,
+       applicationId: application._id 
     });
     }
 
