@@ -153,8 +153,8 @@ export const applyToCampaign = async (req, res) => {
     }
 
     const alreadyApplied = await Application.findOne({
-      campaign: campaignId,
-      influencer: influencerId
+      campaignId: campaignId,
+      influencerId: influencerId
     });
 
     if (alreadyApplied) {
@@ -165,8 +165,8 @@ export const applyToCampaign = async (req, res) => {
     }
 
     const application = await Application.create({
-      campaign: campaignId,
-      influencer: influencerId,
+      campaignId: campaignId,
+      influencerId: influencerId,
       status: "pending"
     });
 
