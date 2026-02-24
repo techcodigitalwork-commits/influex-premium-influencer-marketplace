@@ -175,9 +175,10 @@ export const applyToCampaign = async (req, res) => {
      userId: campaign.brandId,
      message: `New application received for "${campaign.title}"`,
      type: "new_application",
-     link: `/campaign/${campaign._id}`
+     link: `/campaign/${campaign._id}`,
+    applicationId: application._id
    });
-
+console.log("CREATED APPLICATION 👉", application._id);
     return res.status(201).json({
       success: true,
       message: "Application submitted successfully",
