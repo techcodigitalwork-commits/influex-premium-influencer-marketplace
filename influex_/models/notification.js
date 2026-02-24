@@ -16,7 +16,8 @@ const notificationSchema = new mongoose.Schema(
       enum: [
         "application_accepted",
         "new_message",
-        "campaign_update"
+        "campaign_update",
+       "new_application"
       ],
       default: "application_accepted"
     },
