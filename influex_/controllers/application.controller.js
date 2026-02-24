@@ -116,8 +116,8 @@ export const getApplications = async (req, res) => {
 // ======================================================
 export const applyToCampaign = async (req, res) => {
   try {
-    console.log("REQ.PARAMS:", req.params);
-    console.log("REQ.USER:", req.user);
+    //console.log("REQ.PARAMS:", req.params);
+    //console.log("REQ.USER:", req.user);
 
     const campaignId = req.params.id;
     const influencerId = req.user._id;
