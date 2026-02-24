@@ -5,11 +5,11 @@ const notificationSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Profile", // ya "User", jo tumhare frontend me use ho raha ho
-     // required: true
+      required: true
     },
     message: {
       type: String,
-      //required: true
+      required: true
     },
     type: {
       type: String,

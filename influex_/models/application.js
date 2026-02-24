@@ -4,12 +4,12 @@ const applicationSchema = new mongoose.Schema({
   campaignId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Campaign",
-    //required: true
+    required: true
   },
   influencerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    //required: true
+    required: true
   },
   status: {
     type: String,
