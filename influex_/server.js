@@ -23,6 +23,7 @@ import profileRoutes from "./Routes/profile.routes.js";
 import notificationRoutes from "./Routes/notification.routes.js";
 import conversationRoutes from "./Routes/conversation.routes.js"; // add this
 import s3Routes from "./Routes/s3.routes.js";
+import applicationRoutes from "./models/application.js";
 // Models
 import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
@@ -51,6 +52,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api", s3Routes);
+app.use("/api/application", applicationRoutes);
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
