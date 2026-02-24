@@ -19,7 +19,7 @@ const applicationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 applicationSchema.index(
-  { campaignId: 1, influencerIdId: 1 },
+  { campaignId: 1, influencerId : 1 },
   { unique: true }
 );
 
