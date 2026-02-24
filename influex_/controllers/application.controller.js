@@ -39,7 +39,7 @@ export const decideApplication = async (req, res) => {
       // Reject other pending applications
       await Application.updateMany(
         {
-          campaign: campaign._id,
+          campaignId: campaign._id,
           status: "pending",
           _id: { $ne: application._id }
         },
@@ -65,7 +65,7 @@ export const decideApplication = async (req, res) => {
       }
 
       await createNotificationService({
-      userId: application.influencer,
+      userId: application.influencerId,
        message: `Your application for "${campaign.title}" has been accepted! You can now chat with the brand.`,
        type: "application_accepted",
        link: `/campaign/${campaign._id}`
@@ -93,8 +93,8 @@ export const decideApplication = async (req, res) => {
 export const getApplications = async (req, res) => {
   try {
     const applications = await Application.find({
-      campaign: req.params.id
-    }).populate("influencer", "name email");
+      campaignId: req.params.id
+    }).populate("influencerId", "name email");
 
     return res.json({
       success: true,
@@ -194,8 +194,8 @@ export const applyToCampaign = async (req, res) => {
 export const getMyApplications = async (req, res) => {
   try {
     const applications = await Application.find({
-      influencer: req.user._id
-    }).populate("campaign");
+      influencerId: req.user._id
+    }).populate("campaignId");
 
     res.status(200).json({
       success: true,
