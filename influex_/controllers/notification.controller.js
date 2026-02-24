@@ -1,4 +1,5 @@
 import { createNotificationService } from "../services/notification.service.js";
+import Notification from "../models/notification.js";
 
 // Create notification via API (optional)
 export const createNotification = async (req, res) => {
