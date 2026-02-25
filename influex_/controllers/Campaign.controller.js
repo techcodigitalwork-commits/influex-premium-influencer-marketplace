@@ -1,5 +1,6 @@
 import Campaign from "../models/Campaign.js";
 import Profile from "../models/profile.js";
+import Application from "../models/application.js";
 
 export const createCampaign = async (req, res) => {
   try {
@@ -82,8 +83,8 @@ export const completeCampaign = async (req, res) => {
 
   res.json({ success: true });
 };
-import Campaign from "../models/Campaign.js";
-import Application from "../models/application.js";
+
+
 
 export const getMyCampaigns = async (req, res) => {
   try {

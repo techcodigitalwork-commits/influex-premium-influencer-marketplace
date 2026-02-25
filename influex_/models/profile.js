@@ -9,48 +9,32 @@ const profileSchema = new mongoose.Schema(
       unique: true
     },
 
-    profileImage: {
-           type: String
-      },
+    profileImage: String,
 
     followers: {
-             type: String,
-        //     required: true,
-             min: 0
-             },
+      type: String,   // 🔥 String mat rakho
+      default: 0,
+      min: 0
+    },
 
     role: {
       type: String,
-      enum: ["influencer", "brand"],
-      //required: true
+      enum: ["influencer", "brand"]
     },
 
-    name: {
-      type: String,
-      //required: true
-    },
-
+    name: String,
     bio: String,
     location: String,
-    
 
     // Influencer specific
-    categories: {
-      type : String,
-      //required : true 
-    },
-    //followers: Number,
-    platform: String, // Instagram, YouTube etc
+    categories: [String],   // 🔥 array better hai
+    platform: String,
 
     // Brand specific
     companyName: String,
     website: String,
-    industry : String,
-    phone : Number
-
-    // Photographer specific
-   // experience: Number,
-    //portfolioLink: String
+    industry: String,
+    phone: String
   },
   { timestamps: true }
 );
