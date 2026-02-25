@@ -129,9 +129,9 @@ mongoose
   .catch(err => {
     console.error("❌ MongoDB connection failed:", err);
   });
-//import { S3Client } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 
-//export const s3 = new S3Client({
-  //region: process.env.AWS_REGION,
-//});
-//console.log("AWS keys:", process.env.AWS_ACCESS_KEY, process.env.AWS_SECRET_KEY, process.env.AWS_REGION);
+export const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+});
+console.log("AWS keys:", process.env.AWS_ACCESS_KEY, process.env.AWS_SECRET_KEY, process.env.AWS_REGION);
