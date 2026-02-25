@@ -15,34 +15,92 @@ import { decideApplication } from "../controllers/application.controller.js";
 
 const router = express.Router();
 
-// CREATE CAMPAIGN
-router.post("/", auth, authorizeRoles("brand"), createCampaign);
+// =============================
+// 🔹 BRAND ROUTES
+// =============================
 
-// MATCHING
-router.get("/matching", auth, authorizeRoles("influencer"), matchingCampaigns);
+// Create campaign
+router.post(
+  "/",
+  auth,
+  authorizeRoles("brand"),
+  createCampaign
+);
 
-// GET MY CAMPAIGNS
-router.get("/my", auth, authorizeRoles("brand","influencer"), getMyCampaigns);
+// Brand → see their campaigns
+router.get(
+  "/my",
+  auth,
+  authorizeRoles("brand"),
+  getMyCampaigns
+);
 
-// GET APPLICATIONS
-router.get("/:id/applications", auth, authorizeRoles("brand"), getApplications);
+// Brand → get applications of a campaign
+router.get(
+  "/:id/applications",
+  auth,
+  authorizeRoles("brand"),
+  getApplications
+);
 
-// APPLY
-router.post("/:id/apply", auth, authorizeRoles("influencer"), applyToCampaign);
+// Brand → complete campaign
+router.post(
+  "/:id/complete",
+  auth,
+  authorizeRoles("brand"),
+  completeCampaign
+);
 
-// COMPLETE
-router.post("/:id/complete", auth, authorizeRoles("brand"), completeCampaign);
-
-// DECIDE
-router.put("/:id/decide",
+// Brand → accept/reject influencer
+router.put(
+  "/applications/:id/decide",
   auth,
   authorizeRoles("brand"),
   decideApplication
 );
-//router.put("/applications/:id/decide", auth, authorizeRoles("brand"), decideApplication);
 
-// ⚠️ ALWAYS LAST
-router.get("/:id", auth, getCampaignById);
 
+
+// =============================
+// 🔹 INFLUENCER ROUTES
+// =============================
+
+// Influencer → get all open campaigns + applied flag
+router.get(
+  "/all",
+  auth,
+  authorizeRoles("influencer"),
+  getMyCampaigns
+);
+
+// Influencer → matching campaigns
+router.get(
+  "/matching",
+  auth,
+  authorizeRoles("influencer"),
+  matchingCampaigns
+);
+
+// Influencer → apply to campaign
+router.post(
+  "/:id/apply",
+  auth,
+  authorizeRoles("influencer"),
+  applyToCampaign
+);
+
+
+
+// =============================
+// 🔹 COMMON
+// =============================
+
+// Get campaign by ID (both can view)
+router.get(
+  "/:id",
+  auth,
+  authorizeRoles("brand", "influencer"),
+  getCampaignById
+);
 
 export default router;

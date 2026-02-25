@@ -78,7 +78,8 @@ export const login = async (req, res) => {
       user: {
         id: user._id,
         role: user.role
-      }
+      },
+       hasProfile: user.profileStatus === "completed"
     });
   } catch (err) {
     console.error("Login Error:", err);

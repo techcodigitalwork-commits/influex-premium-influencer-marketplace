@@ -82,9 +82,56 @@ export const completeCampaign = async (req, res) => {
 
   res.json({ success: true });
 };
+import Campaign from "../models/Campaign.js";
+import Application from "../models/application.js";
+
 export const getMyCampaigns = async (req, res) => {
-  const campaigns = await Campaign.find({ brandId: req.user._id });
-  res.json({ success: true, campaigns });
+  try {
+
+    // ✅ BRAND → Apne campaigns
+    if (req.user.role === "brand") {
+      const campaigns = await Campaign.find({ brandId: req.user._id });
+
+      return res.json({
+        success: true,
+        data: campaigns
+      });
+    }
+
+    // ✅ INFLUENCER → All open campaigns + applied status
+    if (req.user.role === "influencer") {
+
+      // 1️⃣ Get all open campaigns
+      const campaigns = await Campaign.find({ status: "open" });
+
+      // 2️⃣ Get influencer applications
+      const applications = await Application.find({
+        creatorId: req.user._id
+      });
+
+      const appliedCampaignIds = applications.map(app =>
+        app.campaignId.toString()
+      );
+
+      // 3️⃣ Add applied flag
+      const updatedCampaigns = campaigns.map(campaign => ({
+        ...campaign._doc,
+        applied: appliedCampaignIds.includes(campaign._id.toString())
+      }));
+
+      return res.json({
+        success: true,
+        data: updatedCampaigns
+      });
+    }
+
+  } catch (error) {
+    console.error("Get Campaigns Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch campaigns"
+    });
+  }
 };
 export const getCampaignById = async (req, res) => {
   try {
