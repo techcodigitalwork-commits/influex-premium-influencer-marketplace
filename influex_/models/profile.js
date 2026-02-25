@@ -34,7 +34,11 @@ const profileSchema = new mongoose.Schema(
     companyName: String,
     website: String,
     industry: String,
-    phone: String
+    phone: {
+    type: String,
+   // required: true,
+    match: /^[0-9+]{10,15}$/
+}
   },
   { timestamps: true }
 );
