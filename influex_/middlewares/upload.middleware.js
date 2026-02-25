@@ -1,7 +1,7 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
 import { s3 } from "../config/s3.js";
-console.log("Bucket Name:", process.env.AWS_BUCKET_NAME);
+console.log("UPLOAD FILE BUCKET:", process.env.AWS_BUCKET_NAME);
 
 const upload = multer({
   storage: multerS3({
