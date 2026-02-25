@@ -10,7 +10,7 @@ import http from "http";
 import { Server } from "socket.io";
 
 // Load env
-dotenv.config();
+//dotenv.config();
 
 // Routes
 import authRoutes from "./Routes/auth.routes.js";
