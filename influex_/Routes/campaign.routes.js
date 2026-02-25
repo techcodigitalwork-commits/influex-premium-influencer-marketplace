@@ -22,7 +22,7 @@ router.post("/", auth, authorizeRoles("brand"), createCampaign);
 router.get("/matching", auth, authorizeRoles("influencer"), matchingCampaigns);
 
 // GET MY CAMPAIGNS
-router.get("/my", auth, authorizeRoles("brand"), getMyCampaigns);
+router.get("/my", auth, authorizeRoles("brand","influencer"), getMyCampaigns);
 
 // GET APPLICATIONS
 router.get("/:id/applications", auth, authorizeRoles("brand"), getApplications);
