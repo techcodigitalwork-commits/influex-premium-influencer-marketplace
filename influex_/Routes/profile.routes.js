@@ -1,4 +1,5 @@
 import express from "express";
+import Profile from "../models/profile.js"; 
 import { 
   createProfile, 
   getMyProfile, 
