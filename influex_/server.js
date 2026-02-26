@@ -29,7 +29,7 @@ import notificationRoutes from "./Routes/notification.routes.js";
 import conversationRoutes from "./Routes/conversation.routes.js"; // add this
 import s3Routes from "./Routes/s3.routes.js";
 import applicationRoutes from "./Routes/application.routes.js";
-import subscriptionRoutes from "./Rsubscription.routes.js";
+import subscriptionRoutes from "./Routes/subscription.routes.js";
 // Models
 import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
