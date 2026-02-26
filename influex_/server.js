@@ -29,6 +29,7 @@ import notificationRoutes from "./Routes/notification.routes.js";
 import conversationRoutes from "./Routes/conversation.routes.js"; // add this
 import s3Routes from "./Routes/s3.routes.js";
 import applicationRoutes from "./Routes/application.routes.js";
+import subscriptionRoutes from "./Rsubscription.routes.js";
 // Models
 import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
@@ -58,6 +59,8 @@ app.use("/api/notification", notificationRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api", s3Routes);
 app.use("/api/application", applicationRoutes);
+// Mount subscription routes
+app.use("/api/subscription", subscriptionRoutes);
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
@@ -134,9 +137,62 @@ mongoose
   .catch(err => {
     console.error("❌ MongoDB connection failed:", err);
   });
-// import { S3Client } from "@aws-sdk/client-s3";
+import crypto from "crypto";
+import User from "../models/user.js";
 
-// export const s3 = new S3Client({
-//   region: process.env.AWS_REGION,
-// });
-// console.log("AWS keys:", process.env.AWS_ACCESS_KEY, process.env.AWS_SECRET_KEY, process.env.AWS_REGION);
+export const razorpayWebhook = async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers["x-razorpay-signature"];
+    const body = JSON.stringify(req.body);
+
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSignature !== signature) {
+      return res.status(401).send("Invalid signature");
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    // When subscription is activated (first payment succeeded)
+    if (event === "subscription.activated") {
+      const subId = payload.subscription.entity.id;
+      const user = await User.findOne({ razorpaySubscriptionId: subId });
+      if (user) {
+        user.isSubscribed = true;
+        user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await user.save();
+      }
+    }
+
+    // When invoice (recurring charge) is paid
+    if (event === "invoice.paid") {
+      const subId = payload.invoice.entity.subscription_id;
+      const user = await User.findOne({ razorpaySubscriptionId: subId });
+      if (user) {
+        user.isSubscribed = true;
+        user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await user.save();
+      }
+    }
+
+    // Cancel or failure events
+    if (event === "subscription.cancelled" || event === "payment.failed") {
+      const subId = payload.subscription.entity.id;
+      const user = await User.findOne({ razorpaySubscriptionId: subId });
+      if (user) {
+        user.isSubscribed = false;
+        await user.save();
+      }
+    }
+
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error("Webhook Error:", error);
+    res.status(500).send("Internal error");
+  }
+};

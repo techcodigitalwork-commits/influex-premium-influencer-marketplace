@@ -23,7 +23,25 @@ const userSchema = new mongoose.Schema({
   enum: ["pending", "completed"],
   default: "pending"
 },
-
+bits: {
+  type: Number,
+  default: 100 // influencers ke liye
+},
+applicationsUsed: {
+  type: Number,
+  default: 0
+},
+campaignsCreated: {
+  type: Number,
+  default: 0
+},
+isSubscribed: {
+  type: Boolean,
+  default: false
+},
+subscriptionExpiry: {
+  type: Date
+},
   kycStatus: {
     type: String,
     enum: ["Pending", "Verified", "Rejected"],
