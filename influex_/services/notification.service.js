@@ -2,6 +2,7 @@ import Notification from "../models/notification.js";
 
 export const createNotificationService = async ({
   userId,
+  senderId,
   message,
   type = "application_accepted",
   link = "",
@@ -10,6 +11,7 @@ export const createNotificationService = async ({
   try {
     const notification = await Notification.create({
       user: userId,
+      sender: senderId,
       message,
       type,
       link,

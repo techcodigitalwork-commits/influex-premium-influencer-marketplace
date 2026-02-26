@@ -12,7 +12,7 @@ const profileSchema = new mongoose.Schema(
     profileImage: String,
 
     followers: {
-      type: String,   // 🔥 String mat rakho
+      type: Number,   // 🔥 String mat rakho
       default: 0,
       min: 0
     },

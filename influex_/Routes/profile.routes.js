@@ -15,6 +15,34 @@ const router = express.Router();
 
 router.post("/", auth, createProfile);
 router.get("/me", auth, getMyProfile);
+// GET profile by userId (for notifications, view profile etc.)
+router.get(
+  "/user/:userId",
+  auth,
+  async (req, res) => {
+    try {
+      const profile = await Profile.findOne({ user: req.params.userId })
+        .populate("user", "name email role");
+
+      if (!profile) {
+        return res.status(404).json({
+          success: false,
+          message: "Profile not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        profile,
+      });
+    } catch (err) {
+      res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  }
+);
 
 
 router.get(

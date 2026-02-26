@@ -7,6 +7,10 @@ const notificationSchema = new mongoose.Schema(
       ref: "Profile", // ya "User", jo tumhare frontend me use ho raha ho
       required: true
     },
+   sender: {   // 🔥 important
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
     message: {
       type: String,
       required: true
