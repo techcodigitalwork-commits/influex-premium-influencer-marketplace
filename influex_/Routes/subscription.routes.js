@@ -5,7 +5,7 @@ import {
   razorpayWebhook
 } from "../controllers/subscription.controller.js";
 
-import { protect } from "../middleware/auth.middleware.js"; 
+import { protect } from "../middlewares/auth.middleware.js"; 
 // 👆 jo bhi tum auth middleware use kar rahe ho
 
 const router = express.Router();
