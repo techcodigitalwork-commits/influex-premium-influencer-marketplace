@@ -1,4 +1,4 @@
-import { razorpay } from "../config/razorpay.js";
+import  Razorpay  from "../config/razorpay.js";
 import User from "../models/user.js";
 
 export const createRazorpaySubscription = async (req, res) => {
@@ -8,7 +8,7 @@ export const createRazorpaySubscription = async (req, res) => {
     // Make sure plan_id exists (you got from Razorpay dashboard)
     const { plan_id } = req.body;
 
-    const subscription = await razorpay.subscriptions.create({
+    const subscription = await  Razorpay.subscriptions.create({
       plan_id: plan_SKmSEwh4wl4Tv6,
       total_count: 12,                // total months
       customer_notify: 1,
