@@ -5,7 +5,7 @@ import {
   razorpayWebhook
 } from "../controllers/subscription.controller.js";
 
-import { protect } from "../middlewares/auth.middleware.js"; 
+import auth from "../middlewares/auth.middleware.js"; 
 // 👆 jo bhi tum auth middleware use kar rahe ho
 
 const router = express.Router();
@@ -13,12 +13,12 @@ const router = express.Router();
 // ===============================
 // CREATE RAZORPAY SUBSCRIPTION
 // ===============================
-router.post("/create", protect, createRazorpaySubscription);
+router.post("/create", auth, createRazorpaySubscription);
 
 // ===============================
 // MANUAL SUBSCRIPTION (Optional)
 // ===============================
-router.post("/activate", protect, purchaseSubscription);
+router.post("/activate", auth, purchaseSubscription);
 
 // ===============================
 // RAZORPAY WEBHOOK (NO AUTH)
