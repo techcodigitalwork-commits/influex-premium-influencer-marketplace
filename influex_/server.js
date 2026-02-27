@@ -138,7 +138,7 @@ mongoose
     console.error("❌ MongoDB connection failed:", err);
   });
 import crypto from "crypto";
-import User from "../models/user.js";
+import User from "./models/user.js";
 
 export const razorpayWebhook = async (req, res) => {
   try {
