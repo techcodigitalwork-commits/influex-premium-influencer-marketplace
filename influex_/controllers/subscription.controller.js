@@ -1,4 +1,6 @@
-import  razorpay  from "../config/razorpay.js";
+import { getRazorpayInstance } from "../config/razorpay.js";
+
+const razorpay = getRazorpayInstance();
 import User from "../models/user.js";
 import crypto from "crypto";
 
