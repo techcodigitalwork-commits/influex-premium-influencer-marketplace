@@ -35,6 +35,10 @@ campaignsCreated: {
   type: Number,
   default: 0
 },
+razorpaySubscriptionId: {
+  type: String,
+  default: null
+},
 isSubscribed: {
   type: Boolean,
   default: false
