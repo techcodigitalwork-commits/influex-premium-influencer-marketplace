@@ -21,7 +21,7 @@ export const getOrCreateConversation = async (req, res) => {
     let conversation = await Conversation.findOne({
       campaignId,
       participants: { $all: [req.user._id, participantId] }
-    });
+    }).populate("participants", "name profileImage");
 
     if (!conversation) {
       conversation = await Conversation.create({
@@ -31,6 +31,10 @@ export const getOrCreateConversation = async (req, res) => {
         lastMessage: "",
         lastMessageAt: new Date()
       });
+       conversation = await conversation.populate(
+    "participants",
+    "name profileImage"
+  );
     }
 
     res.json({ success: true, data: conversation });
