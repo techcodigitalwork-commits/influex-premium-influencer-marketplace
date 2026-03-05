@@ -7,6 +7,11 @@ import { checkSubscriptionExpiry } from "./application.controller.js"; // 🔥 r
 // ======================================================
 // CREATE CAMPAIGN (Brand) with free limit + expiry check
 // ======================================================
+ const COINS_PER_CAMPAIGN = 20; // brand ke liye
+
+// ======================================================
+// CREATE CAMPAIGN — bits deduct karo
+// ======================================================
 export const createCampaign = async (req, res) => {
   try {
     if (req.user.role !== "brand") {
@@ -14,27 +19,40 @@ export const createCampaign = async (req, res) => {
     }
 
     const brand = await User.findById(req.user._id);
-    await checkSubscriptionExpiry(brand); // 🔥 check expiry
+    await checkSubscriptionExpiry(brand);
 
-    if (!brand.isSubscribed && brand.campaignsCreated >= 5) {
-      return res.status(403).json({ success: false, message: "Free campaign limit reached. Please subscribe to create more." });
+    // Free limit check
+    if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN) {
+      return res.status(403).json({
+        success: false,
+        message: "Coins khatam! Upgrade to Pro to create more campaigns.",
+        bits: brand.bits
+      });
     }
 
     const { title, description, roles, categories, city, budget } = req.body;
+    const campaign = await Campaign.create({
+      brandId: req.user._id,
+      title, description, roles, categories, city, budget
+    });
 
-    const campaign = await Campaign.create({ brandId: req.user._id, title, description, roles, categories, city, budget });
-
+    // ✅ Bits deduct karo (subscribed users ke liye nahi)
+    if (!brand.isSubscribed) {
+      brand.bits = Math.max(0, (brand.bits || 100) - COINS_PER_CAMPAIGN);
+    }
     brand.campaignsCreated += 1;
     await brand.save();
 
-    res.status(201).json({ success: true, data: campaign });
-
+    res.status(201).json({
+      success: true,
+      data: campaign,
+      bits: brand.bits  // ✅ Frontend ko updated bits bhejo
+    });
   } catch (error) {
     console.error("Create Campaign Error:", error);
     res.status(500).json({ success: false, message: "Failed to create campaign" });
   }
 };
-
 // ======================================================
 // MATCHING CAMPAIGNS / COMPLETE CAMPAIGN / GET MY CAMPAIGNS / GET BY ID
 // ======================================================
