@@ -11,7 +11,7 @@ const COINS_PER_CAMPAIGN = 20;
 // ======================================================
 export const createCampaign = async (req, res) => {
   try {
-if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN) 
+
     if (req.user.role !== "brand") {
       return res.status(403).json({
         success: false,
@@ -21,9 +21,13 @@ if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN)
 
     const brand = await User.findById(req.user._id);
     if (!brand) {
-      return res.status(404).json({ success: false, message: "Brand not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Brand not found"
+      });
     }
 
+    // subscription expiry check
     await checkSubscriptionExpiry(brand);
 
     // Free plan coin check
@@ -47,17 +51,15 @@ if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN)
       budget
     });
 
-    // deduct coins only for free users
+    // coins deduct (only free users)
     if (!brand.isSubscribed) {
-  const currentBits = brand.bits ?? 100;
-  brand.bits = Math.max(0, currentBits - COINS_PER_CAMPAIGN);
-}
+      brand.bits -= COINS_PER_CAMPAIGN;
+    }
 
-    brand.campaignsCreated = (brand.campaignsCreated || 0) + 1;
-
+    brand.campaignsCreated += 1;
     await brand.save();
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       data: campaign,
       bits: brand.bits
@@ -65,13 +67,12 @@ if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN)
 
   } catch (error) {
     console.error("Create Campaign Error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Failed to create campaign"
     });
   }
 };
-
 
 // ======================================================
 // MATCHING CAMPAIGNS
@@ -79,8 +80,9 @@ if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN)
 export const matchingCampaigns = async (req, res) => {
   try {
 
-    const profile = await Profile.findOne({ user: req.user._id });
+    const user = req.user;
 
+    const profile = await Profile.findOne({ user: user._id });
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -93,20 +95,19 @@ export const matchingCampaigns = async (req, res) => {
       city: profile.location
     });
 
-    return res.json({
+    res.json({
       success: true,
       data: campaigns
     });
 
   } catch (error) {
     console.error("Matching Campaign Error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: "Failed to fetch campaigns"
+      message: "Failed to fetch matching campaigns"
     });
   }
 };
-
 
 // ======================================================
 // COMPLETE CAMPAIGN
@@ -114,33 +115,19 @@ export const matchingCampaigns = async (req, res) => {
 export const completeCampaign = async (req, res) => {
   try {
 
-    const campaign = await Campaign.findByIdAndUpdate(
-      req.params.id,
-      { status: "completed" },
-      { new: true }
-    );
-
-    if (!campaign) {
-      return res.status(404).json({
-        success: false,
-        message: "Campaign not found"
-      });
-    }
-
-    return res.json({
-      success: true,
-      data: campaign
+    await Campaign.findByIdAndUpdate(req.params.id, {
+      status: "completed"
     });
 
+    res.json({ success: true });
+
   } catch (error) {
-    console.error("Complete Campaign Error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: "Failed to update campaign"
+      message: "Failed to complete campaign"
     });
   }
 };
-
 
 // ======================================================
 // GET MY CAMPAIGNS
@@ -148,9 +135,11 @@ export const completeCampaign = async (req, res) => {
 export const getMyCampaigns = async (req, res) => {
   try {
 
-    // BRAND
     if (req.user.role === "brand") {
-      const campaigns = await Campaign.find({ brandId: req.user._id });
+
+      const campaigns = await Campaign.find({
+        brandId: req.user._id
+      });
 
       return res.json({
         success: true,
@@ -158,13 +147,14 @@ export const getMyCampaigns = async (req, res) => {
       });
     }
 
-    // INFLUENCER
     if (req.user.role === "influencer") {
 
-      const campaigns = await Campaign.find({ status: "open" });
+      const campaigns = await Campaign.find({
+        status: "open"
+      });
 
       const applications = await Application.find({
-        creatorId: req.user._id
+        influencerId: req.user._id
       });
 
       const appliedCampaignIds = applications.map(app =>
@@ -173,7 +163,9 @@ export const getMyCampaigns = async (req, res) => {
 
       const updatedCampaigns = campaigns.map(campaign => ({
         ...campaign._doc,
-        applied: appliedCampaignIds.includes(campaign._id.toString())
+        applied: appliedCampaignIds.includes(
+          campaign._id.toString()
+        )
       }));
 
       return res.json({
@@ -184,14 +176,12 @@ export const getMyCampaigns = async (req, res) => {
 
   } catch (error) {
     console.error("Get Campaigns Error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Failed to fetch campaigns"
     });
   }
 };
-
 
 // ======================================================
 // GET CAMPAIGN BY ID
@@ -199,7 +189,9 @@ export const getMyCampaigns = async (req, res) => {
 export const getCampaignById = async (req, res) => {
   try {
 
-    const campaign = await Campaign.findById(req.params.id);
+    const { id } = req.params;
+
+    const campaign = await Campaign.findById(id);
 
     if (!campaign) {
       return res.status(404).json({
@@ -208,21 +200,19 @@ export const getCampaignById = async (req, res) => {
       });
     }
 
-    return res.json({
+    res.json({
       success: true,
       data: campaign
     });
 
   } catch (error) {
     console.error("Get Campaign By ID Error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Failed to fetch campaign"
     });
   }
 };
-
 
 
 //import Campaign from "../models/Campaign.js";
