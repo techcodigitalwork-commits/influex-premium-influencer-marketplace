@@ -87,61 +87,112 @@ export const decideApplication = async (req, res) => {
 // ======================================================
 export const applyToCampaign = async (req, res) => {
   try {
+
     const campaignId = req.params.id;
     const influencerId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(campaignId)) {
-      return res.status(400).json({ success: false, message: "Invalid Campaign ID" });
+      return res.status(400).json({
+        success:false,
+        message:"Invalid Campaign ID"
+      });
     }
 
     const campaign = await Campaign.findById(campaignId);
-    if (!campaign) return res.status(404).json({ success: false, message: "Campaign not found" });
+    if (!campaign) {
+      return res.status(404).json({
+        success:false,
+        message:"Campaign not found"
+      });
+    }
 
     if (String(campaign.brandId) === String(influencerId)) {
-      return res.status(400).json({ success: false, message: "You cannot apply to your own campaign" });
+      return res.status(400).json({
+        success:false,
+        message:"You cannot apply to your own campaign"
+      });
     }
 
     if (campaign.status !== "open") {
-      return res.status(400).json({ success: false, message: "Campaign is not open for applications" });
+      return res.status(400).json({
+        success:false,
+        message:"Campaign is not open for applications"
+      });
     }
 
     const user = await User.findById(influencerId);
-    await checkSubscriptionExpiry(user); // 🔥 check expiry
+    if (!user) {
+      return res.status(404).json({
+        success:false,
+        message:"User not found"
+      });
+    }
 
-    if (!["influencer", "model", "photographer", "food", "travel"].includes(user.role)) {
-      return res.status(403).json({ success: false, message: "Only influencers/models/photographers can apply" });
+    await checkSubscriptionExpiry(user);
+
+    if (!["influencer","model","photographer","food","travel"].includes(user.role)) {
+      return res.status(403).json({
+        success:false,
+        message:"Only influencers/models/photographers can apply"
+      });
     }
 
     if (!user.isSubscribed && user.bits < 10) {
-      return res.status(403).json({ success: false, message: "Insufficient bits. Please subscribe." });
+      return res.status(403).json({
+        success:false,
+        message:"Insufficient bits. Please subscribe."
+      });
     }
 
-    const alreadyApplied = await Application.findOne({ campaignId, influencerId });
-    if (alreadyApplied) return res.status(400).json({ success: false, message: "Already applied to this campaign" });
+    const alreadyApplied = await Application.findOne({
+      campaignId,
+      influencerId
+    });
 
-    const application = await Application.create({ campaignId, influencerId, status: "pending" });
+    if (alreadyApplied) {
+      return res.status(400).json({
+        success:false,
+        message:"Already applied to this campaign"
+      });
+    }
 
-    if (!user.isSubscribed) user.bits -= 10;
-    user.applicationsUsed += 1;
+    const application = await Application.create({
+      campaignId,
+      influencerId,
+      status:"pending"
+    });
+
+    if (!user.isSubscribed) {
+      user.bits = Math.max(0, user.bits - 10);
+    }
+
+    user.applicationsUsed = (user.applicationsUsed || 0) + 1;
+
     await user.save();
 
-   await createNotificationService({
-  userId: campaign.brandId,          // notification kis ko milegi
-  senderId: influencerId,            // kisne bheja (🔥 important)
-  message: `New application received for "${campaign.title}"`,
-  type: "new_application",
-  link: `/campaign/${campaign._id}`,
-  applicationId: application._id
-});
+    await createNotificationService({
+      userId: campaign.brandId,
+      senderId: influencerId,
+      message: `New application received for "${campaign.title}"`,
+      type: "new_application",
+      link: `/campaign/${campaign._id}`,
+      applicationId: application._id
+    });
 
-    return res.status(201).json({ success: true, message: "Application submitted successfully", application });
+    return res.status(201).json({
+      success:true,
+      message:"Application submitted successfully",
+      application
+    });
 
   } catch (error) {
     console.error("Apply To Campaign Error:", error);
-    return res.status(500).json({ success: false, message: "Failed to apply to campaign" });
+    return res.status(500).json({
+      success:false,
+      message:"Failed to apply to campaign"
+    });
   }
 };
-
 // ======================================================
 // PURCHASE SUBSCRIPTION (Razorpay / Manual)
 // ======================================================
