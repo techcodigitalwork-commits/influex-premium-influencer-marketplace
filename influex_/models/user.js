@@ -25,7 +25,8 @@ const userSchema = new mongoose.Schema({
 },
 bits: {
   type: Number,
-  default: 100 // influencers ke liye
+  default: 100,
+  min: 0
 },
 applicationsUsed: {
   type: Number,
