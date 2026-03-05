@@ -9,6 +9,8 @@ const COINS_PER_CAMPAIGN = 20;
 // ======================================================
 // CREATE CAMPAIGN
 // ======================================================
+
+
 export const createCampaign = async (req, res) => {
   try {
 
@@ -27,16 +29,23 @@ export const createCampaign = async (req, res) => {
       });
     }
 
-    // subscription expiry check
     await checkSubscriptionExpiry(brand);
 
-    // Free plan coin check
-    if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN) {
-      return res.status(403).json({
-        success: false,
-        message: "Coins khatam! Upgrade to Pro to create more campaigns.",
-        bits: brand.bits
-      });
+    // ✅ Coins check only if NOT subscribed
+    if (!brand.isSubscribed) {
+
+      if (brand.bits === undefined) {
+        brand.bits = 100; // default coins
+      }
+
+      if (brand.bits < COINS_PER_CAMPAIGN) {
+        return res.status(403).json({
+          success: false,
+          message: "Coins khatam! Upgrade to Pro to create more campaigns.",
+          bits: brand.bits
+        });
+      }
+
     }
 
     const { title, description, roles, categories, city, budget } = req.body;
@@ -51,12 +60,13 @@ export const createCampaign = async (req, res) => {
       budget
     });
 
-    // coins deduct (only free users)
+    // ✅ deduct coins only for free users
     if (!brand.isSubscribed) {
       brand.bits -= COINS_PER_CAMPAIGN;
     }
 
     brand.campaignsCreated += 1;
+
     await brand.save();
 
     res.status(201).json({
@@ -73,7 +83,6 @@ export const createCampaign = async (req, res) => {
     });
   }
 };
-
 // ======================================================
 // MATCHING CAMPAIGNS
 // ======================================================
