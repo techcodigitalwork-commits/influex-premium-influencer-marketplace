@@ -130,7 +130,7 @@ export const applyToCampaign = async (req, res) => {
 
     await checkSubscriptionExpiry(user);
 
-    if (!["influencer","model","photographer","food","travel"].includes(user.role)) {
+    if (!["influencer"].includes(user.role)) {
       return res.status(403).json({
         success:false,
         message:"Only influencers/models/photographers can apply"
@@ -163,7 +163,7 @@ export const applyToCampaign = async (req, res) => {
     });
 
     if (!user.isSubscribed) {
-      user.bits = Math.max(0, user.bits - 10);
+      user.bits = Math.max(0, (user.bits || 0) - 10);
     }
 
     user.applicationsUsed = (user.applicationsUsed || 0) + 1;
