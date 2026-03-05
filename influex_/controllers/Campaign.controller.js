@@ -36,9 +36,15 @@ export const createCampaign = async (req, res) => {
     await checkSubscriptionExpiry(brand);
 
     // default values
-    brand.bits = brand.bits ?? 100;
-    brand.campaignsCreated = brand.campaignsCreated ?? 0;
+    //brand.bits = brand.bits ?? 100;
+    //brand.campaignsCreated = brand.campaignsCreated ?? 0;
+    if (brand.bits === undefined || brand.bits === null) {
+  brand.bits = 100;
+}
 
+if (brand.campaignsCreated === undefined || brand.campaignsCreated === null) {
+  brand.campaignsCreated = 0;
+}
     // coins check
     if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN) {
       return res.status(403).json({
