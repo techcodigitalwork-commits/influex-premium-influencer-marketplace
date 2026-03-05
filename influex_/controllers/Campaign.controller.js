@@ -5,6 +5,21 @@ import User from "../models/user.js";
 import { checkSubscriptionExpiry } from "./application.controller.js";
 
 const COINS_PER_CAMPAIGN = 20;
+await checkSubscriptionExpiry(brand);
+
+// coins check
+if (!brand.isSubscribed) {
+
+  brand.bits = brand.bits ?? 100;
+
+  if (brand.bits < COINS_PER_CAMPAIGN) {
+    return res.status(403).json({
+      success: false,
+      message: "Coins khatam! Upgrade to Pro to create more campaigns.",
+      bits: brand.bits
+    });
+  }
+}
 
 // ======================================================
 // CREATE CAMPAIGN
@@ -62,12 +77,12 @@ export const createCampaign = async (req, res) => {
 
     // ✅ deduct coins only for free users
     if (!brand.isSubscribed) {
-      brand.bits -= COINS_PER_CAMPAIGN;
-    }
+  brand.bits = brand.bits - COINS_PER_CAMPAIGN;
+}
 
-    brand.campaignsCreated += 1;
+brand.campaignsCreated = (brand.campaignsCreated ?? 0) + 1;
 
-    await brand.save();
+await brand.save();
 
     res.status(201).json({
       success: true,
