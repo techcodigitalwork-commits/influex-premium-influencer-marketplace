@@ -4,31 +4,18 @@ import Application from "../models/application.js";
 import User from "../models/user.js";
 import { checkSubscriptionExpiry } from "./application.controller.js";
 
-const COINS_PER_CAMPAIGN = 20;
-await checkSubscriptionExpiry(brand);
 
-// coins check
-if (!brand.isSubscribed) {
 
-  brand.bits = brand.bits ?? 100;
-
-  if (brand.bits < COINS_PER_CAMPAIGN) {
-    return res.status(403).json({
-      success: false,
-      message: "Coins khatam! Upgrade to Pro to create more campaigns.",
-      bits: brand.bits
-    });
-  }
-}
 
 // ======================================================
 // CREATE CAMPAIGN
 // ======================================================
-
+const COINS_PER_CAMPAIGN = 20;
 
 export const createCampaign = async (req, res) => {
   try {
 
+    // role check
     if (req.user.role !== "brand") {
       return res.status(403).json({
         success: false,
@@ -36,7 +23,9 @@ export const createCampaign = async (req, res) => {
       });
     }
 
+    // get brand
     const brand = await User.findById(req.user._id);
+
     if (!brand) {
       return res.status(404).json({
         success: false,
@@ -46,21 +35,17 @@ export const createCampaign = async (req, res) => {
 
     await checkSubscriptionExpiry(brand);
 
-    // ✅ Coins check only if NOT subscribed
-    if (!brand.isSubscribed) {
+    // default values
+    brand.bits = brand.bits ?? 100;
+    brand.campaignsCreated = brand.campaignsCreated ?? 0;
 
-      if (brand.bits === undefined) {
-        brand.bits = 100; // default coins
-      }
-
-      if (brand.bits < COINS_PER_CAMPAIGN) {
-        return res.status(403).json({
-          success: false,
-          message: "Coins khatam! Upgrade to Pro to create more campaigns.",
-          bits: brand.bits
-        });
-      }
-
+    // coins check
+    if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN) {
+      return res.status(403).json({
+        success: false,
+        message: "Coins khatam! Upgrade to Pro.",
+        bits: brand.bits
+      });
     }
 
     const { title, description, roles, categories, city, budget } = req.body;
@@ -75,14 +60,14 @@ export const createCampaign = async (req, res) => {
       budget
     });
 
-    // ✅ deduct coins only for free users
+    // deduct coins
     if (!brand.isSubscribed) {
-  brand.bits = brand.bits - COINS_PER_CAMPAIGN;
-}
+      brand.bits -= COINS_PER_CAMPAIGN;
+    }
 
-brand.campaignsCreated = (brand.campaignsCreated ?? 0) + 1;
+    brand.campaignsCreated += 1;
 
-await brand.save();
+    await brand.save();
 
     res.status(201).json({
       success: true,
@@ -92,12 +77,15 @@ await brand.save();
 
   } catch (error) {
     console.error("Create Campaign Error:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to create campaign"
     });
   }
 };
+
+
 // ======================================================
 // MATCHING CAMPAIGNS
 // ======================================================
