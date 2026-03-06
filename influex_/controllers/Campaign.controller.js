@@ -158,10 +158,13 @@ export const getMyCampaigns = async (req, res) => {
       const campaigns = await Campaign.find({
         brandId: req.user._id
       });
+       const brand = await User.findById(req.user._id);
 
       return res.json({
         success: true,
-        data: campaigns
+        data: campaigns,
+        bits: brand.bits, 
+        isSubscribed: brand.isSubscribed
       });
     }
 

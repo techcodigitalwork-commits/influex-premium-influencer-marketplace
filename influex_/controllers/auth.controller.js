@@ -18,6 +18,7 @@ const generateToken = (user) => {
 // Roles / categories that get free bits
 const ROLE_BITS = {
   influencer: 100,
+  brand : 100,
   model: 100,
   photographer: 100,
   food: 150,
@@ -44,8 +45,8 @@ export const signup = async (req, res) => {
 
     // Assign bits dynamically based on role/category
     // Brands get 0 bits, others get ROLE_BITS
-    const bits = ROLE_BITS[roleLower] || 0;
-
+    //const bits = ROLE_BITS[roleLower] || 0;
+    const bits = ROLE_BITS[roleLower] ?? 100;
     // Create user with subscription fields
     const user = await User.create({
       email,
