@@ -4,13 +4,13 @@ import ContactUnlock from "../models/contactUnlock.js"
 
 export const createContract = async (req,res)=>{
 
- const {dealId,deliverables,timeline,amount,creatorId} = req.body
+ const {dealId,deliverables,timeline,amount,influencerId} = req.body
 
  const contract = await Contract.create({
 
   dealId,
   brandId:req.user.id,
-  influencerIdId,
+  influencerId,
   deliverables,
   timeline,
   amount
