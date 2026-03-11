@@ -24,4 +24,4 @@ const DeliverableSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export const Contract = mongoose.model("Deliverable", DeliverableSchema);
+export const  Deliverable  = mongoose.model("Deliverable", DeliverableSchema);
