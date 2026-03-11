@@ -9,7 +9,7 @@ export const createContract = async (req,res)=>{
  const contract = await Contract.create({
 
   dealId,
-  brandId:req.user.id,
+  brandId:req.user._id, 
   influencerId,
   deliverables,
   timeline,
