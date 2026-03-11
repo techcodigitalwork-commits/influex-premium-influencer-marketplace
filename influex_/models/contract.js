@@ -1,15 +1,23 @@
 import mongoose from "mongoose";
+
+const { ObjectId } = mongoose.Schema.Types;
+
 const contractSchema = new mongoose.Schema({
 
-
   dealId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: ObjectId,
     ref: "Deal"
   },
 
-  brandId: ObjectId,
+  brandId: {
+    type: ObjectId,
+    ref: "User"
+  },
 
-  influencerId: ObjectId,
+  influencerId: {
+    type: ObjectId,
+    ref: "User"
+  },
 
   deliverables: String,
 
@@ -25,4 +33,4 @@ const contractSchema = new mongoose.Schema({
 
 });
 
-export const Contract = mongoose.model("contract", contractSchema);
+export default mongoose.model("Contract", contractSchema);
