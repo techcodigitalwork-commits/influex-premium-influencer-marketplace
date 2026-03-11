@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 const contractSchema = new mongoose.Schema({
+
 
   dealId: {
     type: mongoose.Schema.Types.ObjectId,
