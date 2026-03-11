@@ -11,4 +11,4 @@ router.get("/my",auth,getMyDeals)
 router.get("/:id",auth,getDealById)
 router.get("/campaign/:campaignId",auth,getCampaignDeals)
 
-export default router
+export default router;
