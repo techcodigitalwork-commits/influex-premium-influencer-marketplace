@@ -1,4 +1,4 @@
-import { Contract } from "../models/contract.js"
+import  Contract  from "../models/contract.js"
 import User from "../models/user.js"
 import ContactUnlock from "../models/contactUnlock.js"
 
