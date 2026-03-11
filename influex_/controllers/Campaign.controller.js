@@ -4,8 +4,20 @@ import Application from "../models/application.js";
 import User from "../models/user.js";
 import { checkSubscriptionExpiry } from "./application.controller.js";
 
-
-
+// ======================================================
+// PLAN LIMITS
+// ======================================================
+const PLAN_LIMITS = {
+  free: {
+    campaigns: 10
+  },
+  pro: {
+    campaigns: 30
+  },
+  pro_plus: {
+    campaigns: Infinity
+  }
+};
 
 // ======================================================
 // CREATE CAMPAIGN
@@ -36,17 +48,26 @@ export const createCampaign = async (req, res) => {
     await checkSubscriptionExpiry(brand);
 
     // default values
-    //brand.bits = brand.bits ?? 100;
-    //brand.campaignsCreated = brand.campaignsCreated ?? 0;
     if (brand.bits === undefined || brand.bits === null) {
-  brand.bits = 100;
-}
+      brand.bits = 100;
+    }
 
-if (brand.campaignsCreated === undefined || brand.campaignsCreated === null) {
-  brand.campaignsCreated = 0;
-}
-    // coins check
-    if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN) {
+    if (brand.campaignsCreated === undefined || brand.campaignsCreated === null) {
+      brand.campaignsCreated = 0;
+    }
+
+    // PLAN LIMIT CHECK
+    const limits = PLAN_LIMITS[brand.plan || "free"];
+
+    if (!brand.isSubscribed && brand.campaignsCreated >= limits.campaigns) {
+      return res.status(403).json({
+        success: false,
+        message: "Campaign limit reached. Upgrade your plan."
+      });
+    }
+
+    // coins check (only for free plan)
+    if (!brand.isSubscribed && brand.plan === "free" && brand.bits < COINS_PER_CAMPAIGN) {
       return res.status(403).json({
         success: false,
         message: "Coins khatam! Upgrade to Pro.",
@@ -66,8 +87,8 @@ if (brand.campaignsCreated === undefined || brand.campaignsCreated === null) {
       budget
     });
 
-    // deduct coins
-    if (!brand.isSubscribed) {
+    // deduct coins (only free plan)
+    if (!brand.isSubscribed && brand.plan === "free") {
       brand.bits -= COINS_PER_CAMPAIGN;
     }
 
@@ -158,12 +179,13 @@ export const getMyCampaigns = async (req, res) => {
       const campaigns = await Campaign.find({
         brandId: req.user._id
       });
-       const brand = await User.findById(req.user._id);
+
+      const brand = await User.findById(req.user._id);
 
       return res.json({
         success: true,
         data: campaigns,
-        bits: brand.bits, 
+        bits: brand.bits,
         isSubscribed: brand.isSubscribed
       });
     }
@@ -234,120 +256,3 @@ export const getCampaignById = async (req, res) => {
     });
   }
 };
-
-
-//import Campaign from "../models/Campaign.js";
-// import Profile from "../models/profile.js";
-// import Application from "../models/application.js";
-// import User from "../models/user.js";
-// import { checkSubscriptionExpiry } from "./application.controller.js"; // 🔥 reuse
-
-// // ======================================================
-// // CREATE CAMPAIGN (Brand) with free limit + expiry check
-// // ======================================================
-//  const COINS_PER_CAMPAIGN = 20; // brand ke liye
-
-// // ======================================================
-// // CREATE CAMPAIGN — bits deduct karo
-// // ======================================================
-// export const createCampaign = async (req, res) => {
-//   try {
-//     if (req.user.role !== "brand") {
-//       return res.status(403).json({ success: false, message: "Only brands can create campaigns" });
-//     }
-
-//     const brand = await User.findById(req.user._id);
-//     await checkSubscriptionExpiry(brand);
-
-//     // Free limit check
-//     if (!brand.isSubscribed && brand.bits < COINS_PER_CAMPAIGN) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Coins khatam! Upgrade to Pro to create more campaigns.",
-//         bits: brand.bits
-//       });
-//     }
-
-//     const { title, description, roles, categories, city, budget } = req.body;
-//     const campaign = await Campaign.create({
-//       brandId: req.user._id,
-//       title, description, roles, categories, city, budget
-//     });
-
-//     // ✅ Bits deduct karo (subscribed users ke liye nahi)
-//     if (!brand.isSubscribed) {
-//       brand.bits = Math.max(0, (brand.bits || 100) - COINS_PER_CAMPAIGN);
-//     }
-//     brand.campaignsCreated += 1;
-//     await brand.save();
-
-//     res.status(201).json({
-//       success: true,
-//       data: campaign,
-//       bits: brand.bits  // ✅ Frontend ko updated bits bhejo
-//     });
-//   } catch (error) {
-//     console.error("Create Campaign Error:", error);
-//     res.status(500).json({ success: false, message: "Failed to create campaign" });
-//   }
-// };
-// // ======================================================
-// // MATCHING CAMPAIGNS / COMPLETE CAMPAIGN / GET MY CAMPAIGNS / GET BY ID
-// // ======================================================
-// export const matchingCampaigns = async (req, res) => {
-//   try {
-//     const user = req.user;
-//     const profile = await Profile.findOne({ user: user._id });
-//     if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
-
-//     const campaigns = await Campaign.find({ status: "open", city: profile.location });
-//     res.json({ success: true, data: campaigns });
-//   } catch (error) {
-//     console.error("Matching Campaign Error:", error);
-//     res.status(500).json({ success: false, message: "Failed to fetch matching campaigns" });
-//   }
-// };
-
-// export const completeCampaign = async (req, res) => {
-//   await Campaign.findByIdAndUpdate(req.params.id, { status: "completed" });
-//   res.json({ success: true });
-// };
-
-// export const getMyCampaigns = async (req, res) => {
-//   try {
-//     if (req.user.role === "brand") {
-//       const campaigns = await Campaign.find({ brandId: req.user._id });
-//       return res.json({ success: true, data: campaigns });
-//     }
-
-//     if (req.user.role === "influencer") {
-//       const campaigns = await Campaign.find({ status: "open" });
-//       const applications = await Application.find({ creatorId: req.user._id });
-//       const appliedCampaignIds = applications.map(app => app.campaignId.toString());
-
-//       const updatedCampaigns = campaigns.map(campaign => ({
-//         ...campaign._doc,
-//         applied: appliedCampaignIds.includes(campaign._id.toString())
-//       }));
-
-//       return res.json({ success: true, data: updatedCampaigns });
-//     }
-
-//   } catch (error) {
-//     console.error("Get Campaigns Error:", error);
-//     res.status(500).json({ success: false, message: "Failed to fetch campaigns" });
-//   }
-// };
-
-// export const getCampaignById = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const campaign = await Campaign.findById(id);
-//     if (!campaign) return res.status(404).json({ success: false, message: "Campaign not found" });
-
-//     res.json({ success: true, data: campaign });
-//   } catch (error) {
-//     console.error("Get Campaign By ID Error:", error);
-//     res.status(500).json({ success: false, message: "Failed to fetch campaign" });
-//   }
-// };

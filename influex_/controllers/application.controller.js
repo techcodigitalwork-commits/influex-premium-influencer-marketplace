@@ -7,11 +7,27 @@ import { createNotificationService } from "../services/notification.service.js";
 import mongoose from "mongoose";
 
 // ======================================================
+// PLAN LIMITS
+// ======================================================
+const PLAN_LIMITS = {
+  free: {
+    applications: 10
+  },
+  pro: {
+    applications: 30
+  },
+  pro_plus: {
+    applications: Infinity
+  }
+};
+
+// ======================================================
 // SUBSCRIPTION EXPIRY CHECK
 // ======================================================
 export const checkSubscriptionExpiry = async (user) => {
   if (user.subscriptionExpiry && user.subscriptionExpiry < new Date()) {
     user.isSubscribed = false;
+    user.plan = "free";
     await user.save();
   }
 };
@@ -64,14 +80,14 @@ export const decideApplication = async (req, res) => {
         });
       }
 
-    await createNotificationService({
-  userId: application.influencerId,
-  senderId: campaign.brandId,   // 🔥 brand is sender
-  message: `Your application for "${campaign.title}" has been accepted!`,
-  type: "application_accepted",
-  link: `/campaign/${campaign._id}`,
-  applicationId: application._id
-});
+      await createNotificationService({
+        userId: application.influencerId,
+        senderId: campaign.brandId,
+        message: `Your application for "${campaign.title}" has been accepted!`,
+        type: "application_accepted",
+        link: `/campaign/${campaign._id}`,
+        applicationId: application._id
+      });
     }
 
     return res.json({ success: true, message: `Application ${decision.toLowerCase()}` });
@@ -83,7 +99,7 @@ export const decideApplication = async (req, res) => {
 };
 
 // ======================================================
-// APPLY TO CAMPAIGN (Influencer) with bits deduction & expiry check
+// APPLY TO CAMPAIGN (Influencer)
 // ======================================================
 export const applyToCampaign = async (req, res) => {
   try {
@@ -137,7 +153,16 @@ export const applyToCampaign = async (req, res) => {
       });
     }
 
-    if (!user.isSubscribed && user.bits < 10) {
+    const limits = PLAN_LIMITS[user.plan || "free"];
+
+    if (!user.isSubscribed && user.applicationsUsed >= limits.applications) {
+      return res.status(403).json({
+        success:false,
+        message:"Application limit reached. Upgrade your plan."
+      });
+    }
+
+    if (!user.isSubscribed && user.plan === "free" && user.bits < 10) {
       return res.status(403).json({
         success:false,
         message:"Insufficient bits. Please subscribe."
@@ -162,7 +187,7 @@ export const applyToCampaign = async (req, res) => {
       status:"pending"
     });
 
-    if (!user.isSubscribed) {
+    if (!user.isSubscribed && user.plan === "free") {
       user.bits = Math.max(0, (user.bits || 0) - 10);
     }
 
@@ -193,15 +218,16 @@ export const applyToCampaign = async (req, res) => {
     });
   }
 };
+
 // ======================================================
-// PURCHASE SUBSCRIPTION (Razorpay / Manual)
+// PURCHASE SUBSCRIPTION
 // ======================================================
 export const purchaseSubscription = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
     user.isSubscribed = true;
-    user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await user.save();
 
     res.json({ success: true, message: "Subscription activated" });
@@ -212,7 +238,7 @@ export const purchaseSubscription = async (req, res) => {
 };
 
 // ======================================================
-// GET APPLICATIONS / MY APPLICATIONS (UNCHANGED)
+// GET APPLICATIONS
 // ======================================================
 export const getApplications = async (req, res) => {
   try {

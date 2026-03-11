@@ -11,11 +11,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, ".env") });
-console.log("AWS_REGION:", process.env.AWS_REGION);
-console.log("AWS_BUCKET_NAME:", process.env.AWS_BUCKET_NAME);
-console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "YES" : "NO");
-console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "YES" : "NO");
-console.log("AWS_SECRET_ACCESS_KEY:", process.env.AWS_SECRET_ACCESS_KEY ? "YES" : "NO");
+// //console.log("AWS_REGION:", process.env.AWS_REGION);
+// console.log("AWS_BUCKET_NAME:", process.env.AWS_BUCKET_NAME);
+// console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "YES" : "NO");
+// console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "YES" : "NO");
+// console.log("AWS_SECRET_ACCESS_KEY:", process.env.AWS_SECRET_ACCESS_KEY ? "YES" : "NO");
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -39,9 +39,15 @@ import conversationRoutes from "./Routes/conversation.routes.js"; // add this
 import s3Routes from "./Routes/s3.routes.js";
 import applicationRoutes from "./Routes/application.routes.js";
 import subscriptionRoutes from "./Routes/subscription.routes.js";
+import dealRoutes from "./Routes/deal.routes.js"
+import DeliverableRoutes from "./Routes/Deliverable.routes.js"
+import contactRoutes from "./Routes/contact.routes.js"
+import contractRoutes from "./Routes/contract.routes.js"
+import inviteRoutes from "./Routes/invite.routes.js"
 // Models
 import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
+import { detectContactInfo } from "./utils/contactDetector.js";
 
 // App init
 const app = express();
@@ -70,6 +76,11 @@ app.use("/api", s3Routes);
 app.use("/api/application", applicationRoutes);
 // Mount subscription routes
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/deal",dealRoutes)
+app.use("/api/deliverable",DeliverableRoutes)
+app.use("/api/contact",contactRoutes)
+app.use("/api/contract",contractRoutes)
+app.use("/api/invite",inviteRoutes)
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
@@ -82,61 +93,139 @@ mongoose
     const server = http.createServer(app);
 
     // Socket.io setup
-    const io = new Server(server, {
-      cors: {
-        origin: "*", // ya frontend origin
-        methods: ["GET", "POST"]
+    // Socket.io setup
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Socket.io events
+io.on("connection", socket => {
+  console.log("User connected: ", socket.id);
+
+  socket.on("joinRoom", profileId => {
+    socket.join(profileId);
+    console.log(`User ${profileId} joined room`);
+  });
+
+  socket.on("sentMessage", async ({ conversationId, senderId, text }) => {
+
+    if (!text || !conversationId || !senderId) return;
+
+    // 🔴 CONTACT DETECTION
+    const blocked = detectContactInfo(text);
+
+    if (blocked) {
+      socket.emit("messageBlocked", {
+        message:
+          "Sharing contact information (phone, email, Instagram, WhatsApp) is not allowed. Please communicate inside the platform."
+      });
+      return;
+    }
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) return;
+
+    const message = {
+      sender: senderId,
+      text,
+      createdAt: new Date()
+    };
+
+    conversation.messages.push(message);
+    conversation.lastMessage = text;
+    conversation.lastMessageAt = new Date();
+
+    await conversation.save();
+
+    // Notify participants
+    conversation.participants.forEach(participantId => {
+
+      io.to(participantId.toString()).emit("receiveMessage", {
+        conversationId,
+        message
+      });
+
+      if (participantId.toString() !== senderId.toString()) {
+
+        io.to(participantId.toString()).emit("newNotification", {
+          message: `New message from ${senderId}`,
+          conversationId
+        });
+
+        Notification.create({
+          user: participantId,
+          message: `New message from ${senderId}`,
+          type: "new_message",
+          link: `/chat/${conversationId}`
+        });
+
       }
     });
 
-    // Socket.io events
-    io.on("connection", socket => {
-      console.log("User connected: ", socket.id);
+  });
 
-      socket.on("joinRoom", profileId => {
-        socket.join(profileId);
-        console.log(`User ${profileId} joined room`);
-      });
+  socket.on("disconnect", () => {
+    console.log("User disconnected: ", socket.id);
+  });
+});
+    // const io = new Server(server, {
+    //   cors: {
+    //     origin: "*", // ya frontend origin
+    //     methods: ["GET", "POST"]
+    //   }
+    // });
 
-      socket.on("sendMessage", async ({ conversationId, senderId, text }) => {
-        if (!text || !conversationId || !senderId) return;
+    // // Socket.io events
+    // io.on("connection", socket => {
+    //   console.log("User connected: ", socket.id);
 
-        const conversation = await Conversation.findById(conversationId);
-        if (!conversation) return;
+    //   socket.on("joinRoom", profileId => {
+    //     socket.join(profileId);
+    //     console.log(`User ${profileId} joined room`);
+    //   });
 
-        const message = { sender: senderId, text, createdAt: new Date() };
-        conversation.messages.push(message);
-        conversation.lastMessage = text;
-        conversation.lastMessageAt = new Date();
-        await conversation.save();
+    //   socket.on("sendMessage", async ({ conversationId, senderId, text }) => {
+    //     if (!text || !conversationId || !senderId) return;
 
-        // Notify participants
-        conversation.participants.forEach(participantId => {
-          io.to(participantId.toString()).emit("receiveMessage", {
-            conversationId,
-            message
-          });
+    //     const conversation = await Conversation.findById(conversationId);
+    //     if (!conversation) return;
 
-          if (participantId.toString() !== senderId.toString()) {
-            io.to(participantId.toString()).emit("newNotification", {
-              message: `New message from ${senderId}`,
-              conversationId
-            });
+    //     const message = { sender: senderId, text, createdAt: new Date() };
+    //     conversation.messages.push(message);
+    //     conversation.lastMessage = text;
+    //     conversation.lastMessageAt = new Date();
+    //     await conversation.save();
 
-            Notification.create({
-              user: participantId,
-              message: `New message from ${senderId}`,
-              type: "new_message",
-              link: `/chat/${conversationId}`
-            });
-          }
-        });
-      });
+    //     // Notify participants
+    //     conversation.participants.forEach(participantId => {
+    //       io.to(participantId.toString()).emit("receiveMessage", {
+    //         conversationId,
+    //         message
+    //       });
 
-      socket.on("disconnect", () => {
-        console.log("User disconnected: ", socket.id);
-      });
-    });
+    //       if (participantId.toString() !== senderId.toString()) {
+    //         io.to(participantId.toString()).emit("newNotification", {
+    //           message: `New message from ${senderId}`,
+    //           conversationId
+    //         });
+
+    //         Notification.create({
+    //           user: participantId,
+    //           message: `New message from ${senderId}`,
+    //           type: "new_message",
+    //           link: `/chat/${conversationId}`
+    //         });
+    //       }
+    //     });
+    //   });
+
+    //   socket.on("disconnect", () => {
+    //     console.log("User disconnected: ", socket.id);
+    //   });
+    // });
 
    server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT} with Socket.io`);

@@ -1,5 +1,6 @@
 import Conversation from "../models/Conversation.js";
 import Notification from "../models/notification.js";
+import { detectContactInfo } from "../utils/contactDetector.js"
 import mongoose from "mongoose";
 
 
@@ -159,3 +160,31 @@ export const getMessages = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch messages" });
   }
 };
+
+
+export const sentMessage = async (req,res)=>{
+
+ try{
+
+ const {message} = req.body
+
+ const blocked = detectContactInfo(message)
+
+ if(blocked){
+   return res.status(400).json({
+     success:false,
+     message:"Sharing contact information is not allowed. Please communicate inside the platform."
+   })
+ }
+
+ // save message normally
+ res.json({
+  success:true,
+  message:"Message sent"
+ })
+
+ }catch(err){
+  res.status(500).json({message:err.message})
+ }
+
+}

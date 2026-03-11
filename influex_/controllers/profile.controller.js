@@ -1,5 +1,6 @@
 import Profile from "../models/profile.js";
 import User from "../models/user.js";
+import ContactUnlock from "../models/contactUnlock.js";
 
 
 // Create Profile
@@ -65,8 +66,9 @@ export const getMyProfile = async (req, res) => {
       message: "Failed to fetch profile"
     });
   }
-};
-// profile serach influencers
+}
+
+// profile search influencers
 export const getInfluencers = async (req, res) => {
   try {
     const {
@@ -95,8 +97,30 @@ export const getInfluencers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const influencers = await Profile.find(filter)
+      .populate("user", "email")
       .skip(skip)
       .limit(Number(limit));
+
+    const brandId = req.user.id;
+
+    const data = await Promise.all(
+      influencers.map(async (inf) => {
+
+        const unlocked = await ContactUnlock.findOne({
+          brandId,
+          creatorId: inf.user._id
+        });
+
+        return {
+          ...inf.toObject(),
+
+          email: unlocked ? inf.user.email : null,
+          phone: unlocked ? inf.phone : null,
+          instagram: unlocked ? inf.instagram : null
+        };
+
+      })
+    );
 
     const total = await Profile.countDocuments(filter);
 
@@ -105,14 +129,16 @@ export const getInfluencers = async (req, res) => {
       total,
       page: Number(page),
       totalPages: Math.ceil(total / limit),
-      data: influencers
+      data
     });
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-// search brands 
+
+
+// search brands
 export const getBrands = async (req, res) => {
   try {
     const {
@@ -128,8 +154,29 @@ export const getBrands = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const brands = await Profile.find(filter)
+      .populate("user", "email")
       .skip(skip)
       .limit(Number(limit));
+
+    const creatorId = req.user.id;
+
+    const data = await Promise.all(
+      brands.map(async (brand) => {
+
+        const unlocked = await ContactUnlock.findOne({
+          creatorId,
+          brandId: brand.user._id
+        });
+
+        return {
+          ...brand.toObject(),
+
+          email: unlocked ? brand.user.email : null,
+          phone: unlocked ? brand.phone : null
+        };
+
+      })
+    );
 
     const total = await Profile.countDocuments(filter);
 
@@ -138,7 +185,7 @@ export const getBrands = async (req, res) => {
       total,
       page: Number(page),
       totalPages: Math.ceil(total / limit),
-      data: brands
+      data
     });
 
   } catch (error) {
