@@ -11,7 +11,7 @@ export const createDeal = async (req,res)=>{
  const deal = await Deal.create({
    campaignId,
    influencerId,
-   brandId:req.user.id,
+   brandId:req.user._id,
    amount,
    platformCommission:commission,
    creatorAmount
