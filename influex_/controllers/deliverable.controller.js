@@ -1,4 +1,4 @@
-import Deliverable from "../models/Deliverable.js"
+import { Deliverable } from "../models/Deliverable.js"
 
 export const submitWork = async (req,res)=>{
 

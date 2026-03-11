@@ -7,7 +7,7 @@ const contractSchema = new mongoose.Schema({
 
   brandId: ObjectId,
 
-  creatorId: ObjectId,
+  influencerId: ObjectId,
 
   deliverables: String,
 
@@ -22,3 +22,5 @@ const contractSchema = new mongoose.Schema({
   }
 
 });
+
+export default mongoose.model("contract", contractSchema);
