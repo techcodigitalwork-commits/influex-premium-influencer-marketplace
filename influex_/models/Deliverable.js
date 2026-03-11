@@ -9,5 +9,4 @@ const DeliverableSchema = new mongoose.Schema({
   status: { type: String, enum: ["submitted", "approved", "rejected"], default: "submitted" }
 }, { timestamps: true });
 
-// Default export
 export default mongoose.model("Deliverable", DeliverableSchema);
