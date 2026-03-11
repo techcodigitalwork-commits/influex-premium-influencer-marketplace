@@ -1,5 +1,5 @@
 import Deliverable  from "../models/Deliverable.js"
-
+import Escrow from "../models/Escrow.js"
 export const submitWork = async (req,res)=>{
 
  try{
@@ -30,6 +30,17 @@ export const approveDeliverable = async (req,res)=>{
 
  await deliverable.save()
 
- res.json({message:"Deliverable approved"})
+ 
+  const escrow = await Escrow.findOne({ dealId: deliverable.dealId })
+
+ escrow.status = "released"
+ await escrow.save()
+
+ // reward creator
+ await rewardCreator(deliverable.creatorId)
+
+ res.json({
+  message:"Payment released and creator rewarded"
+ })
 
 }
