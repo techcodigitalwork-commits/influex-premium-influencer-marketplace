@@ -68,3 +68,35 @@ export const unlockContact = async (req,res)=>{
  }
 
 }
+export const getMyContracts = async (req,res)=>{
+ try{
+
+ const contracts = await Contract.find({
+  brandId:req.user._id
+ }).populate("influencerId","username email")
+
+ res.json(contracts)
+
+ }catch(err){
+  res.status(500).json({message:err.message})
+ }
+}
+export const getContract = async (req,res)=>{
+ try{
+
+ const {id} = req.params
+
+ const contract = await Contract.findById(id)
+  .populate("brandId","username email")
+  .populate("influencerId","username email")
+
+ if(!contract){
+  return res.status(404).json({message:"Contract not found"})
+ }
+
+ res.json(contract)
+
+ }catch(err){
+  res.status(500).json({message:err.message})
+ }
+}
