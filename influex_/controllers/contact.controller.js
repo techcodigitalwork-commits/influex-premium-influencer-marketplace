@@ -2,7 +2,7 @@ import User from "../models/user.js"
 
 export const unlockContact = async (req,res)=>{
 
- const {creatorId} = req.body
+ const {influencerId} = req.body
 
  const brand = await User.findById(req.user.id)
 
@@ -13,7 +13,7 @@ export const unlockContact = async (req,res)=>{
  brand.bits -= 50
  await brand.save()
 
- const creator = await User.findById(creatorId)
+ const creator = await User.findById(influencerId)
 
  res.json({
    email:creator.email

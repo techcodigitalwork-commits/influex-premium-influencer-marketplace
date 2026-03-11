@@ -8,7 +8,7 @@ export const submitWork = async (req,res)=>{
 
  const deliverable = await Deliverable.create({
    dealId,
-   creatorId:req.user.id,
+   influencerId:req.user.id,
    links,
    note
  })

@@ -10,7 +10,7 @@ export const createContract = async (req,res)=>{
 
   dealId,
   brandId:req.user.id,
-  creatorId,
+  influencerIdId,
   deliverables,
   timeline,
   amount
@@ -39,7 +39,7 @@ export const unlockContact = async (req,res)=>{
 
  try{
 
- const {creatorId} = req.body
+ const {influencerId} = req.body
 
  const brand = await User.findById(req.user.id)
 
@@ -54,10 +54,10 @@ export const unlockContact = async (req,res)=>{
  // save unlock record
  await ContactUnlock.create({
    brandId: brand._id,
-   creatorId
+   influencerId
  })
 
- const creator = await User.findById(creatorId)
+ const creator = await User.findById(influencerId)
 
  res.json({
    email: creator.email

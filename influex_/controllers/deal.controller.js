@@ -10,7 +10,7 @@ export const createDeal = async (req,res)=>{
 
  const deal = await Deal.create({
    campaignId,
-   creatorId,
+   influencerId,
    brandId:req.user.id,
    amount,
    platformCommission:commission,
