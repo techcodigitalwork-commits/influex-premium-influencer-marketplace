@@ -242,11 +242,33 @@ export const purchaseSubscription = async (req, res) => {
 // ======================================================
 export const getApplications = async (req, res) => {
   try {
-    const applications = await Application.find({ campaignId: req.params.id }).populate("influencerId", "name email");
-    return res.json({ success: true, applications });
+
+    const { id } = req.params;
+
+    // ObjectId validation
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid campaign ID"
+      });
+    }
+
+    const applications = await Application.find({
+      campaignId: id
+    }).populate("influencerId", "name email");
+
+    return res.json({
+      success: true,
+      applications
+    });
+
   } catch (error) {
     console.error("Get Applications Error:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch applications" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch applications"
+    });
   }
 };
 
