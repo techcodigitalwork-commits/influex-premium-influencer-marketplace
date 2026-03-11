@@ -7,7 +7,7 @@ const contactUnlockSchema = new mongoose.Schema({
     ref: "User"
   },
 
-  creatorId: {
+  influencerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
   },

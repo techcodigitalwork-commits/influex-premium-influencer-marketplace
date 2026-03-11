@@ -8,7 +8,7 @@ const inviteSchema = new mongoose.Schema({
     required: true
   },
 
-  creatorId: {
+  influencerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true
