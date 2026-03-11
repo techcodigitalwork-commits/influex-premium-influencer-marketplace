@@ -1,4 +1,4 @@
-const deliverableSchema = new mongoose.Schema({
+const DeliverableSchema = new mongoose.Schema({
 
   dealId: {
     type: mongoose.Schema.Types.ObjectId,
