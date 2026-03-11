@@ -4,7 +4,7 @@ import {
  depositPayment,
  releasePayment,
  approveDeliverable
-} from "../controllers/escrow.controller.js"
+} from "../controllers/payment.controller.js"
 
 const router = express.Router()
 
