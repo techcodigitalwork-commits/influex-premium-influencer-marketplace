@@ -6,7 +6,8 @@ import {
   matchingCampaigns,
   completeCampaign,
   getMyCampaigns,
-  getCampaignById
+  getCampaignById,
+  updateCampaign
 } from "../controllers/Campaign.controller.js";
 
 import { getApplications } from "../controllers/application.controller.js";
@@ -102,5 +103,8 @@ router.get(
   authorizeRoles("brand", "influencer"),
   getCampaignById
 );
+router.put("/update/:id", auth,
+   authorizeRoles("brand"),
+   updateCampaign);
 
 export default router;

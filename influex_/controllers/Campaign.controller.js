@@ -256,3 +256,62 @@ export const getCampaignById = async (req, res) => {
     });
   }
 };
+// ======================================================
+// UPDATE CAMPAIGN
+// ======================================================
+
+export const updateCampaign = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    const campaign = await Campaign.findById(id);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        message: "Campaign not found"
+      });
+    }
+
+    // only campaign owner can edit
+    if (campaign.brandId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to edit this campaign"
+      });
+    }
+
+    // prevent editing completed campaigns
+    if (campaign.status === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Completed campaigns cannot be edited"
+      });
+    }
+
+    const { title, description, roles, categories, city, budget } = req.body;
+
+    campaign.title = title || campaign.title;
+    campaign.description = description || campaign.description;
+    campaign.roles = roles || campaign.roles;
+    campaign.categories = categories || campaign.categories;
+    campaign.city = city || campaign.city;
+    campaign.budget = budget || campaign.budget;
+
+    await campaign.save();
+
+    res.json({
+      success: true,
+      data: campaign
+    });
+
+  } catch (error) {
+    console.error("Update Campaign Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update campaign"
+    });
+  }
+};
