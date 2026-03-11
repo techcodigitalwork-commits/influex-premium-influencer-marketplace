@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const DeliverableSchema = new mongoose.Schema({
 
   dealId: {
@@ -5,7 +7,7 @@ const DeliverableSchema = new mongoose.Schema({
     ref: "Deal"
   },
 
-  creatorId: {
+  influencerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
   },
@@ -21,3 +23,5 @@ const DeliverableSchema = new mongoose.Schema({
   }
 
 }, { timestamps: true });
+
+export default mongoose.model("Deliverable", DeliverableSchema);
