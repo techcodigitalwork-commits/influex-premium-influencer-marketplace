@@ -39,15 +39,16 @@ import conversationRoutes from "./Routes/conversation.routes.js"; // add this
 import s3Routes from "./Routes/s3.routes.js";
 import applicationRoutes from "./Routes/application.routes.js";
 import subscriptionRoutes from "./Routes/subscription.routes.js";
-import dealRoutes from "./Routes/deal.routes.js"
-import DeliverableRoutes from "./Routes/Deliverable.routes.js"
-import contactRoutes from "./Routes/contact.routes.js"
-import contractRoutes from "./Routes/contract.routes.js"
-import inviteRoutes from "./Routes/invite.routes.js"
+import dealRoutes from "./Routes/deal.routes.js";
+import DeliverableRoutes from "./Routes/Deliverable.routes.js";
+import contactRoutes from "./Routes/contact.routes.js";
+import contractRoutes from "./Routes/contract.routes.js";
+import inviteRoutes from "./Routes/invite.routes.js";
 // Models
 import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
 import { detectContactInfo } from "./utils/contactDetector.js";
+import paymentsRoutes from "./Routes/payments.routes.js"
 
 // App init
 const app = express();
@@ -81,6 +82,7 @@ app.use("/api/deliverable",DeliverableRoutes)
 app.use("/api/contact",contactRoutes)
 app.use("/api/contract",contractRoutes)
 app.use("/api/invite",inviteRoutes)
+app.use("/api/payment",paymentsRoutes)
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
