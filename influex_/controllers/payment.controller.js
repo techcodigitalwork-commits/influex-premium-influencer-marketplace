@@ -170,17 +170,12 @@ export const approveDeliverable = async (req,res)=>{
 export const submitDeliverable = async (req,res)=>{
  try{
 
- const {dealId, links, note} = req.body
-
- if(!mongoose.Types.ObjectId.isValid(dealId)){
-  return res.status(400).json({
-   message:"Invalid dealId"
-  })
- }
+ const {dealId} = req.params
+ const {links,note} = req.body
 
  const deliverable = await Deliverable.create({
   dealId,
-  creatorId: req.user._id,
+  creatorId:req.user._id,
   links,
   note,
   status:"submitted"

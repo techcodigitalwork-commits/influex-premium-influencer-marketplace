@@ -19,6 +19,6 @@ router.post("/verify", auth, verifyPayment)
 // approve deliverable and release escrow
 router.post("/approve-deliverable", auth, approveDeliverable)
 //work submit
-router.post("/submit-deliverable", auth, submitDeliverable)
+router.post("/deal/:dealId/submit-deliverable", auth, submitDeliverable)
 
 export default router
