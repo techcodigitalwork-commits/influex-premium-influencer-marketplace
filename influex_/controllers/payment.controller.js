@@ -102,6 +102,7 @@ export const verifyPayment = async (req,res)=>{
   paymentId: razorpay_payment_id,
   status:"funded"
  })
+ await Deal.findByIdAndUpdate(dealId, { status: "active" });
 
  res.json({
   success:true,
