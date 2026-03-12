@@ -4,28 +4,52 @@ const escrowSchema = new mongoose.Schema({
 
   dealId:{
     type: mongoose.Schema.Types.ObjectId,
-    ref:"Deal"
+    ref:"Deal",
+    required:true
   },
 
   brandId:{
     type: mongoose.Schema.Types.ObjectId,
-    ref:"User"
+    ref:"User",
+    required:true
   },
 
   influencerId:{
     type: mongoose.Schema.Types.ObjectId,
-    ref:"User"
+    ref:"User",
+    required:true
   },
 
-  amount:Number,
+  amount:{
+    type:Number,
+    required:true
+  },
 
-  commission:Number,
+  commission:{
+    type:Number,
+    required:true
+  },
 
-  creatorAmount:Number,
+  creatorAmount:{
+    type:Number,
+    required:true
+  },
+
+  orderId:{
+    type:String     // Razorpay order id
+  },
+
+  paymentId:{
+    type:String     // Razorpay payment id
+  },
+
+  releaseDate:{
+    type:Date
+  },
 
   status:{
     type:String,
-    enum:["pending","funded","released"],
+    enum:["pending","funded","released","refunded"],
     default:"pending"
   }
 
