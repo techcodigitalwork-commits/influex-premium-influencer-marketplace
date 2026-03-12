@@ -4,7 +4,8 @@ import auth from "../middlewares/auth.middleware.js"
 import {
  depositPayment,
  verifyPayment,
- approveDeliverable
+ approveDeliverable,
+ submitDeliverable
 } from "../controllers/payment.controller.js"
 
 const router = express.Router()
@@ -17,5 +18,7 @@ router.post("/verify", auth, verifyPayment)
 
 // approve deliverable and release escrow
 router.post("/approve-deliverable", auth, approveDeliverable)
+//work submit
+router.post("/submit-deliverable", auth, submitDeliverable)
 
 export default router
