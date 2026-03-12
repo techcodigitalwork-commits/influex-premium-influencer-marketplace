@@ -18,6 +18,7 @@ export const depositPayment = async (req,res)=>{
  try{
 
  const {dealId, amount} = req.body
+ console.log(req.body)
 
  if(!mongoose.Types.ObjectId.isValid(dealId)){
   return res.status(400).json({message:"Invalid dealId"})
