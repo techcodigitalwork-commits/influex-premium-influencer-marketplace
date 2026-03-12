@@ -14,28 +14,29 @@ const razorpay = new Razorpay({
 // CREATE PAYMENT ORDER
 // =====================================
 
+import Deal from "../models/deal.js"
+
 export const depositPayment = async (req,res)=>{
  try{
 
- const {dealId, amount} = req.body
- console.log(req.body)
+ const {dealId} = req.body
+
+ console.log("REQ BODY:", req.body)
 
  if(!mongoose.Types.ObjectId.isValid(dealId)){
   return res.status(400).json({message:"Invalid dealId"})
  }
 
- const existing = await Escrow.findOne({dealId})
+ const deal = await Deal.findById(dealId)
 
- if(existing){
-  return res.status(400).json({
-   message:"Escrow already funded"
-  })
+ if(!deal){
+  return res.status(404).json({message:"Deal not found"})
  }
 
  const order = await razorpay.orders.create({
-   amount: amount * 100,
+   amount: deal.amount * 100,
    currency: "INR",
-   receipt: dealId
+   receipt: dealId.toString()
  })
 
  res.json({
@@ -44,6 +45,7 @@ export const depositPayment = async (req,res)=>{
  })
 
  }catch(err){
+  console.log("DEPOSIT ERROR:", err)
   res.status(500).json({message:err.message})
  }
 }
