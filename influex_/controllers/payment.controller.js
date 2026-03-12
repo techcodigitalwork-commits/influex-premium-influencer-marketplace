@@ -175,7 +175,7 @@ export const submitDeliverable = async (req,res)=>{
 
  const deliverable = await Deliverable.create({
   dealId,
-  creatorId:req.user._id,
+  influencerId:req.user._id,
   links,
   note,
   status:"submitted"
