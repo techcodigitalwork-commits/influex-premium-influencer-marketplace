@@ -180,6 +180,8 @@ export const submitDeliverable = async (req,res)=>{
   note,
   status:"submitted"
  })
+ await Deal.findByIdAndUpdate(dealId,{
+  workStatus:"submitted"  })
 
  res.json({
   success:true,
