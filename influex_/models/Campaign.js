@@ -35,7 +35,10 @@ const campaignSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
-
+  bidAmount: 
+  req.body.bidAmount || 0,
+  proposal: 
+   req.body.proposal  || "",
   
 
   status: {

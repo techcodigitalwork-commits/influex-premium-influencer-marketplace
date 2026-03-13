@@ -16,7 +16,15 @@ const applicationSchema = new mongoose.Schema({
     enum: ["pending", "accepted", "rejected"],
     default: "pending"
   }
-}, { timestamps: true });
+  ,
+  bidAmount:
+   { type: Number,
+     default: 0 },
+  proposal:
+    { type: String,
+     default: "" },
+},
+ { timestamps: true });
 
 applicationSchema.index(
   { campaignId: 1, influencerId : 1 },
