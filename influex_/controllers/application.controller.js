@@ -88,6 +88,18 @@ export const decideApplication = async (req, res) => {
         link: `/campaign/${campaign._id}`,
         applicationId: application._id
       });
+      if (decision.toLowerCase() === "rejected") {
+
+  await createNotificationService({
+    userId: application.influencerId,
+    senderId: campaign.brandId,
+    message: `Your application for "${campaign.title}" was rejected`,
+    type: "campaign_update",
+    link: `/campaign/${campaign._id}`,
+    applicationId: application._id
+  });
+
+}
     }
 
     return res.json({ success: true, message: `Application ${decision.toLowerCase()}` });
@@ -198,7 +210,7 @@ export const applyToCampaign = async (req, res) => {
     await user.save();
 
     await createNotificationService({
-      user: campaign.brandId,
+      userId: campaign.brandId,
       senderId: influencerId,
       message: `New application received for "${campaign.title}"`,
       type: "new_application",

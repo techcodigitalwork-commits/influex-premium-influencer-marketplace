@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Profile", // ya "User", jo tumhare frontend me use ho raha ho
-      required: true
-    },
+  
+    {
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
    sender: {   // 🔥 important
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
