@@ -184,6 +184,8 @@ export const applyToCampaign = async (req, res) => {
     const application = await Application.create({
       campaignId,
       influencerId,
+     bidAmount: req.body.bidAmount || 0,
+     proposal: req.body.proposal || "",
       status:"pending"
     });
 
