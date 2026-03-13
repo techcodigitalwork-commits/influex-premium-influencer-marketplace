@@ -38,6 +38,7 @@ export const checkSubscriptionExpiry = async (user) => {
 export const decideApplication = async (req, res) => {
   try {
     const { decision } = req.body;
+    const decisionLower = decision.toLowerCase();
 
     if (!["accepted", "rejected"].includes(decision.toLowerCase())) {
       return res.status(400).json({ success: false, message: "Invalid decision" });
