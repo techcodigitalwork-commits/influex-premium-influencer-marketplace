@@ -8,7 +8,7 @@ export const sendInvite = async (req,res)=>{
 
   campaignId,
   influencerId,
-  brandId:req.user.id
+  brandId:req.user._id
 
  })
 
