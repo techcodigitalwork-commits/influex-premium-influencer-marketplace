@@ -198,7 +198,7 @@ export const applyToCampaign = async (req, res) => {
     await user.save();
 
     await createNotificationService({
-      userId: campaign.brandId,
+      user: campaign.brandId,
       senderId: influencerId,
       message: `New application received for "${campaign.title}"`,
       type: "new_application",
