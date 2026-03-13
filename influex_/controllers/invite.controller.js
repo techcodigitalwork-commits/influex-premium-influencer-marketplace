@@ -2,7 +2,7 @@ import Invite from "../models/invite.js"
 
 export const sendInvite = async (req,res)=>{
 
- const {campaignId,creatorId} = req.body
+ const {campaignId,influencerId} = req.body
 
  const invite = await Invite.create({
 
