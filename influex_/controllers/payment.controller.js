@@ -3,6 +3,7 @@ import Deliverable from "../models/Deliverable.js"
 import mongoose from "mongoose"
 import Razorpay from "razorpay"
 import crypto from "crypto"
+import Deal from "../models/Deal.js"
 
 const razorpay = new Razorpay({
  key_id: process.env.RAZORPAY_KEY_ID,
@@ -14,7 +15,7 @@ const razorpay = new Razorpay({
 // CREATE PAYMENT ORDER
 // =====================================
 
-import Deal from "../models/deal.js"
+
 
 export const depositPayment = async (req,res)=>{
  try{

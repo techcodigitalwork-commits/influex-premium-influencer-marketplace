@@ -44,6 +44,8 @@ import DeliverableRoutes from "./Routes/Deliverable.routes.js";
 import contactRoutes from "./Routes/contact.routes.js";
 import contractRoutes from "./Routes/contract.routes.js";
 import inviteRoutes from "./Routes/invite.routes.js";
+import adminRoutes from "./Routes/admin.routes.js"
+import disputeRoutes from "./Routes/dispute.routes.js";
 // Models
 import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
@@ -83,6 +85,8 @@ app.use("/api/contact",contactRoutes)
 app.use("/api/contract",contractRoutes)
 app.use("/api/invite",inviteRoutes)
 app.use("/api/payment",paymentsRoutes)
+app.use("/api/admin", adminRoutes)
+app.use("/api/dispute", disputeRoutes);
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
