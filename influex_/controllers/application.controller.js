@@ -9,16 +9,19 @@ import mongoose from "mongoose";
 // ======================================================
 // PLAN LIMITS
 // ======================================================
-const PLAN_LIMITS = {
-  free: {
-    applications: 10
-  },
-  pro: {
-    applications: 30
-  },
-  pro_plus: {
-    applications: Infinity
-  }
+// ======================================================
+// TOKEN CONFIG
+// ======================================================
+const TOKENS = {
+  free: 100,
+  pro_monthly: 1000,
+  pro_plus_monthly: 2000,
+  pro_yearly: 15000,
+  pro_plus_yearly: 25000
+};
+
+const COST = {
+  APPLY: 10
 };
 
 // ======================================================
@@ -114,9 +117,7 @@ if (decisionLower === "rejected") {
   }
 };
 
-// ======================================================
-// APPLY TO CAMPAIGN (Influencer)
-// ======================================================
+//apply 
 export const applyToCampaign = async (req, res) => {
   try {
 
@@ -160,28 +161,17 @@ export const applyToCampaign = async (req, res) => {
       });
     }
 
-    await checkSubscriptionExpiry(user);
-
-    if (!["influencer"].includes(user.role)) {
-      return res.status(403).json({
-        success:false,
-        message:"Only influencers/models/photographers can apply"
-      });
+    // 🔥 DEFAULT TOKENS
+    if (user.bits === undefined || user.bits === null) {
+      user.bits = TOKENS[user.plan] || 100;
     }
 
-    const limits = PLAN_LIMITS[user.plan || "free"];
-
-    if (!user.isSubscribed && user.applicationsUsed >= limits.applications) {
+    // 🔥 TOKEN CHECK
+    if (user.bits < COST.APPLY) {
       return res.status(403).json({
         success:false,
-        message:"Application limit reached. Upgrade your plan."
-      });
-    }
-
-    if (!user.isSubscribed && user.plan === "free" && user.bits < 10) {
-      return res.status(403).json({
-        success:false,
-        message:"Insufficient bits. Please subscribe."
+        message:"Not enough tokens. Upgrade your plan.",
+        bits:user.bits
       });
     }
 
@@ -200,14 +190,13 @@ export const applyToCampaign = async (req, res) => {
     const application = await Application.create({
       campaignId,
       influencerId,
-     bidAmount: req.body.bidAmount || 0,
-     proposal: req.body.proposal || "",
+      bidAmount: req.body.bidAmount || 0,
+      proposal: req.body.proposal || "",
       status:"pending"
     });
 
-    if (!user.isSubscribed && user.plan === "free") {
-      user.bits = Math.max(0, (user.bits || 0) - 10);
-    }
+    // 🔥 DEDUCT TOKENS
+    user.bits -= COST.APPLY;
 
     user.applicationsUsed = (user.applicationsUsed || 0) + 1;
 
@@ -225,7 +214,8 @@ export const applyToCampaign = async (req, res) => {
     return res.status(201).json({
       success:true,
       message:"Application submitted successfully",
-      application
+      application,
+      remainingTokens: user.bits
     });
 
   } catch (error) {
@@ -236,65 +226,45 @@ export const applyToCampaign = async (req, res) => {
     });
   }
 };
-
-// ======================================================
-// PURCHASE SUBSCRIPTION
-// ======================================================
+// purchase subscription
 export const purchaseSubscription = async (req, res) => {
   try {
+
+    const { plan } = req.body; // pro_monthly etc
+
     const user = await User.findById(req.user.id);
 
-    user.isSubscribed = true;
-    user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await user.save();
-
-    res.json({ success: true, message: "Subscription activated" });
-  } catch (err) {
-    console.error("Purchase Subscription Error:", err);
-    res.status(500).json({ success: false, message: "Subscription failed" });
-  }
-};
-
-// ======================================================
-// GET APPLICATIONS
-// ======================================================
-export const getApplications = async (req, res) => {
-  try {
-
-    const { id } = req.params;
-
-    // ObjectId validation
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!TOKENS[plan]) {
       return res.status(400).json({
-        success: false,
-        message: "Invalid campaign ID"
+        success:false,
+        message:"Invalid plan"
       });
     }
 
-    const applications = await Application.find({
-      campaignId: id
-    }).populate("influencerId", "name email");
+    user.plan = plan;
+    user.bits = TOKENS[plan]; // 🔥 RESET TOKENS
 
-    return res.json({
+    // expiry set
+    if (plan.includes("monthly")) {
+      user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    } else {
+      user.subscriptionExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    }
+
+    await user.save();
+
+    res.json({
       success: true,
-      applications
+      message: "Subscription activated",
+      plan,
+      tokens: user.bits
     });
 
-  } catch (error) {
-    console.error("Get Applications Error:", error);
-
-    return res.status(500).json({
+  } catch (err) {
+    console.error("Purchase Subscription Error:", err);
+    res.status(500).json({
       success: false,
-      message: "Failed to fetch applications"
+      message: "Subscription failed"
     });
-  }
-};
-
-export const getMyApplications = async (req, res) => {
-  try {
-    const applications = await Application.find({ influencerId: req.user._id }).populate("campaignId");
-    res.status(200).json({ success: true, applications });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
   }
 };

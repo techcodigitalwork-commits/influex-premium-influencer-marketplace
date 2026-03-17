@@ -7,27 +7,29 @@ import { checkSubscriptionExpiry } from "./application.controller.js";
 // ======================================================
 // PLAN LIMITS
 // ======================================================
-const PLAN_LIMITS = {
-  free: {
-    campaigns: 10
-  },
-  pro: {
-    campaigns: 30
-  },
-  pro_plus: {
-    campaigns: Infinity
-  }
+// ======================================================
+// TOKEN CONFIG
+// ======================================================
+const TOKENS = {
+  free: 200,
+  pro_monthly: 1000,
+  pro_plus_monthly: 2500,
+  pro_yearly: 12000,
+  pro_plus_yearly: 25000
+};
+
+const COST = {
+  CREATE_CAMPAIGN: 100
 };
 
 // ======================================================
 // CREATE CAMPAIGN
 // ======================================================
-const COINS_PER_CAMPAIGN = 20;
+
 
 export const createCampaign = async (req, res) => {
   try {
 
-    // role check
     if (req.user.role !== "brand") {
       return res.status(403).json({
         success: false,
@@ -35,7 +37,6 @@ export const createCampaign = async (req, res) => {
       });
     }
 
-    // get brand
     const brand = await User.findById(req.user._id);
 
     if (!brand) {
@@ -49,28 +50,14 @@ export const createCampaign = async (req, res) => {
 
     // default values
     if (brand.bits === undefined || brand.bits === null) {
-      brand.bits = 100;
+      brand.bits = TOKENS[brand.plan] || 200;
     }
 
-    if (brand.campaignsCreated === undefined || brand.campaignsCreated === null) {
-      brand.campaignsCreated = 0;
-    }
-
-    // PLAN LIMIT CHECK
-    const limits = PLAN_LIMITS[brand.plan || "free"];
-
-    if (!brand.isSubscribed && brand.campaignsCreated >= limits.campaigns) {
+    // 🔥 TOKEN CHECK (MAIN LOGIC)
+    if (brand.bits < COST.CREATE_CAMPAIGN) {
       return res.status(403).json({
         success: false,
-        message: "Campaign limit reached. Upgrade your plan."
-      });
-    }
-
-    // coins check (only for free plan)
-    if (!brand.isSubscribed && brand.plan === "free" && brand.bits < COINS_PER_CAMPAIGN) {
-      return res.status(403).json({
-        success: false,
-        message: "Coins khatam! Upgrade to Pro.",
+        message: "Not enough tokens. Upgrade your plan.",
         bits: brand.bits
       });
     }
@@ -87,12 +74,11 @@ export const createCampaign = async (req, res) => {
       budget
     });
 
-    // deduct coins (only free plan)
-    if (!brand.isSubscribed && brand.plan === "free") {
-      brand.bits -= COINS_PER_CAMPAIGN;
-    }
+    // 🔥 DEDUCT TOKENS
+    brand.bits -= COST.CREATE_CAMPAIGN;
 
-    brand.campaignsCreated += 1;
+    // optional tracking
+    brand.campaignsCreated = (brand.campaignsCreated || 0) + 1;
 
     await brand.save();
 

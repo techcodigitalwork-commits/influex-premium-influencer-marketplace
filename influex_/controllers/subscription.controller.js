@@ -4,6 +4,29 @@ const razorpay = getRazorpayInstance();
 import User from "../models/user.js";
 import crypto from "crypto";
 
+const PLAN_DETAILS = {
+  "plan_pro_monthly_id": {
+    plan: "pro_monthly",
+    tokens: 1000,
+    duration: 30
+  },
+  "plan_proplus_monthly_id": {
+    plan: "pro_plus_monthly",
+    tokens: 2500,
+    duration: 30
+  },
+  "plan_pro_yearly_id": {
+    plan: "pro_yearly",
+    tokens: 12000,
+    duration: 365
+  },
+  "plan_proplus_yearly_id": {
+    plan: "pro_plus_yearly",
+    tokens: 25000,
+    duration: 365
+  }
+};
+
 
 export const createRazorpaySubscription = async (req, res) => {
   try {
@@ -12,10 +35,13 @@ export const createRazorpaySubscription = async (req, res) => {
     const { plan_id } = req.body;
 
     const subscription = await razorpay.subscriptions.create({
-      plan_id: plan_id,
-      total_count: 12,
-      customer_notify: 1,
-    });
+       plan_id,
+       total_count: 12,
+       customer_notify: 1,
+       notes: {
+          userId: user._id.toString()
+  }
+});
 
     user.razorpaySubscriptionId = subscription.id;
     await user.save();
@@ -56,13 +82,14 @@ export const purchaseSubscription = async (req, res) => {
 // ===============================
 export const razorpayWebhook = async (req, res) => {
   try {
+
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
     const signature = req.headers["x-razorpay-signature"];
 
     const expectedSignature = crypto
       .createHmac("sha256", webhookSecret)
-      .update(req.body)
+      .update(req.body.toString())
       .digest("hex");
 
     if (expectedSignature !== signature) {
@@ -71,38 +98,56 @@ export const razorpayWebhook = async (req, res) => {
 
     const event = JSON.parse(req.body.toString());
 
-    // When subscription activated
+    // ===============================
+    // SUBSCRIPTION ACTIVATED
+    // ===============================
     if (event.event === "subscription.activated") {
-      const subId = event.payload.subscription.entity.id;
+
+      const subscription = event.payload.subscription.entity;
+      const subId = subscription.id;
+      const planId = subscription.plan_id;
 
       const user = await User.findOne({
-        razorpaySubscriptionId: subId,
+        razorpaySubscriptionId: subId
       });
 
-      if (user) {
-        user.isSubscribed = true;
+      if (user && PLAN_DETAILS[planId]) {
+
+        const planData = PLAN_DETAILS[planId];
+
+        user.plan = planData.plan;
+        user.bits = planData.tokens; // 🔥 ADD TOKENS
+
         user.subscriptionExpiry = new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
+          Date.now() + planData.duration * 24 * 60 * 60 * 1000
         );
+
         await user.save();
       }
     }
 
-    // When payment failed
+    // ===============================
+    // SUBSCRIPTION CANCELLED
+    // ===============================
     if (event.event === "subscription.cancelled") {
+
       const subId = event.payload.subscription.entity.id;
 
       const user = await User.findOne({
-        razorpaySubscriptionId: subId,
+        razorpaySubscriptionId: subId
       });
 
       if (user) {
-        user.isSubscribed = false;
+        user.plan = "free";
+        user.bits = 100; // reset
+        user.subscriptionExpiry = null;
+
         await user.save();
       }
     }
 
     res.status(200).send("OK");
+
   } catch (error) {
     console.error("Webhook Error:", error);
     res.status(500).send("Webhook error");
