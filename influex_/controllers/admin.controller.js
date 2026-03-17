@@ -1,6 +1,6 @@
 import User from "../models/user.js"
 import Campaign from "../models/Campaign.js"
-import Deal from "../models/Deal.js"
+import Deal from "../models/deal.js"
 import Escrow from "../models/Escrow.js"
 import Deliverable from "../models/Deliverable.js"
 import Application from "../models/application.js"
