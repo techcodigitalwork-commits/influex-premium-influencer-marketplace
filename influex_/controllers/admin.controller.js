@@ -52,7 +52,7 @@ export const getDashboardStats = async(req,res)=>{
 export const getAllUsers = async(req,res)=>{
  try{
 
- const users = await User.find().select("-password")
+ const users = await User.find().select("-password").populate("profile"); 
 
  res.status(200).json({
   success:true,

@@ -56,7 +56,19 @@ subscriptionExpiry: {
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  
 }, { timestamps: true });
+userSchema.virtual("profile", {
+  ref: "Profile",
+  localField: "_id",
+  foreignField: "user",
+  justOne: true
+});
+
+userSchema.set("toObject", { virtuals: true });
+userSchema.set("toJSON", { virtuals: true });
+
+//////////////////////////////////////////////////////
 
 export default mongoose.model("User", userSchema);
