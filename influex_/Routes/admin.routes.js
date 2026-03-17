@@ -21,7 +21,8 @@ getTransactions,
 getRevenue,
 getDisputes,
 refundEscrow,
-releasePayment
+releasePayment,
+ getAllUsersWithProfile
  
 } from "../controllers/admin.controller.js";
 
@@ -185,6 +186,10 @@ router.patch(
  auth,
  authorizeRoles("admin"),
  releasePayment
-)
+);
+router.get("/users-full",
+     auth,
+      authorizeRoles("admin"),
+ getAllUsersWithProfile);
 
 export default router;

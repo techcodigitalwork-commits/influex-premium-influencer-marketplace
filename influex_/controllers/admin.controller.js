@@ -6,7 +6,7 @@ import Deliverable from "../models/Deliverable.js"
 import Application from "../models/application.js"
 import Review from "../models/review.js"
 import Dispute from "../models/dispute.js";
-//import profile from "../models/profile.js"
+import Profile from "../models/profile.js"
 
 
 //////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ export const banUser = async(req,res)=>{
 
  const user = await User.findByIdAndUpdate(
   id,
-  {isBanned:true},
+  { isActive: false },
   {new:true}
  )
 
@@ -356,3 +356,35 @@ export const releasePayment = async(req,res)=>{
   res.status(500).json({message:err.message})
  }
 }
+
+export const getAllUsersWithProfile = async (req, res) => {
+  try {
+
+    const profiles = await Profile.find()
+      .populate("user", "email role isActive");
+
+    const data = profiles.map(p => ({
+      _id: p.user?._id,
+      email: p.user?.email,
+      role: p.user?.role,
+      isActive: p.user?.isActive,
+
+      name: p.name,
+      bio: p.bio,
+      location: p.location,
+      followers: p.followers,
+      categories: p.categories,
+      platform: p.platform,
+      companyName: p.companyName,
+      profileImage: p.profileImage
+    }));
+
+    res.json({
+      success: true,
+      users: data
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

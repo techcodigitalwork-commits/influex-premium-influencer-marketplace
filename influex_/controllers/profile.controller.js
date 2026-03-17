@@ -210,6 +210,7 @@ export const updateProfile = async (req, res) => {
     const allowedUpdates = [
       "name",
       "bio",
+       "followers",
       "location",
       "categories",
       "platform",
