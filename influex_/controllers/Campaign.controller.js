@@ -132,7 +132,7 @@ export const matchingCampaigns = async (req, res) => {
     const campaigns = await Campaign.find({
       status: "open",
       city: profile.location
-    });
+    }).sort({ createdAt: -1 });
 
     res.json({
       success: true,
@@ -178,7 +178,7 @@ export const getMyCampaigns = async (req, res) => {
 
       const campaigns = await Campaign.find({
         brandId: req.user._id
-      });
+      }).sort({ createdAt: -1 });
 
       const brand = await User.findById(req.user._id);
 
