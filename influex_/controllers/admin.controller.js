@@ -6,6 +6,7 @@ import Deliverable from "../models/Deliverable.js"
 import Application from "../models/application.js"
 import Review from "../models/review.js"
 import Dispute from "../models/dispute.js";
+//import profile from "../models/profile.js"
 
 
 //////////////////////////////////////////////////////
@@ -52,7 +53,11 @@ export const getDashboardStats = async(req,res)=>{
 export const getAllUsers = async(req,res)=>{
  try{
 
- const users = await User.find().select("-password").populate("profile"); 
+ const users = await User.find().select("-passwordHash") .populate({
+        path: "profile",
+        select: "name bio location profileImage followers categories platform companyName"
+      });
+       
 
  res.status(200).json({
   success:true,
