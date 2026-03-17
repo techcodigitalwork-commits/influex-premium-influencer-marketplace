@@ -3,7 +3,7 @@ import Deliverable from "../models/Deliverable.js"
 import mongoose from "mongoose"
 import Razorpay from "razorpay"
 import crypto from "crypto"
-import Deal from "../models/Deal.js"
+import Deal from "../models/deal.js"
 
 const razorpay = new Razorpay({
  key_id: process.env.RAZORPAY_KEY_ID,
