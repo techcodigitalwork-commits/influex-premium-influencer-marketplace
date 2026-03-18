@@ -213,3 +213,64 @@ export const approveDeliverable = async (req,res)=>{
     res.status(500).json({message:err.message})
   }
 }
+export const submitDeliverable = async (req,res)=>{
+  try{
+
+    const {dealId} = req.params
+    const {links, note} = req.body
+
+    if(!mongoose.Types.ObjectId.isValid(dealId)){
+      return res.status(400).json({message:"Invalid dealId"})
+    }
+
+    const deal = await Deal.findById(dealId)
+
+    if(!deal){
+      return res.status(404).json({message:"Deal not found"})
+    }
+
+    // 🔥 only assigned influencer can submit
+    if(deal.influencerId.toString() !== req.user._id.toString()){
+      return res.status(403).json({
+        message:"Not authorized"
+      })
+    }
+
+    // 🔥 payment hona chahiye pehle
+    if(deal.paymentStatus !== "deposited"){
+      return res.status(400).json({
+        message:"Payment not deposited yet"
+      })
+    }
+
+    // 🔥 already submitted check
+    if(deal.workStatus === "submitted"){
+      return res.status(400).json({
+        message:"Work already submitted"
+      })
+    }
+
+    const deliverable = await Deliverable.create({
+      dealId,
+      influencerId: req.user._id,
+      links,
+      note,
+      status: "submitted"
+    })
+
+    // ✅ update deal
+    await Deal.findByIdAndUpdate(dealId,{
+      workStatus:"submitted"
+    })
+
+    res.json({
+      success:true,
+      message:"Work submitted successfully",
+      deliverable
+    })
+
+  }catch(err){
+    console.log("SUBMIT ERROR:", err)
+    res.status(500).json({message:err.message})
+  }
+}
