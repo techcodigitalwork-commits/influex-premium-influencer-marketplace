@@ -75,7 +75,11 @@ export const respondInvite = async (req, res) => {
     }
 
     // 2️⃣ Update Invite
-    invite.status = action;
+    if (action === "accepted") {
+  invite.status = "connected";  // 🔥 CHANGE HERE
+} else {
+  invite.status = "rejected";
+}
     invite.respondedAt = new Date();
     await invite.save();
 

@@ -22,7 +22,7 @@ const inviteSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["pending","accepted","rejected"],
+    enum: ["pending","accepted","rejected","connected"],
     default: "pending"
   },
   
