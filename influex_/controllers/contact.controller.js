@@ -1,40 +1,38 @@
-import User from "../models/user.js"
+import User from "../models/user.js";
+import Profile from "../models/profile.js";
 
-export const unlockContact = async (req,res)=>{
+export const unlockContact = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
- try{
+    const { influencerId } = req.body;
 
- if(!req.user){
-   return res.status(401).json({message:"User not authenticated"})
- }
+    // Brand check
+    const brand = await User.findById(req.user._id);
+    if (!brand) return res.status(404).json({ message: "Brand not found" });
 
- const {influencerId} = req.body
+    if (brand.bits < 50) return res.status(400).json({ message: "Not enough bits" });
 
- const brand = await User.findById(req.user._id)
+    // Deduct 50 bits
+    brand.bits -= 50;
+    await brand.save();
 
- if(!brand){
-   return res.status(404).json({message:"Brand not found"})
- }
+    // Influencer check
+    const influencer = await User.findById(influencerId);
+    if (!influencer) return res.status(404).json({ message: "Influencer not found" });
 
- if(brand.bits < 50){
-  return res.status(400).json({message:"Not enough bits"})
- }
+    // Fetch influencer profile for platform / portfolio
+    const profile = await Profile.findOne({ userId: influencerId });
+    
+    res.json({
+      email: influencer.email,
+      platform: profile?.platform || null, // agar profile nahi hai to null
+     // portfolio: profile?.portfolioLink || null
+    });
 
- brand.bits -= 50
- await brand.save()
-
- const creator = await User.findById(influencerId)
-
- if(!creator){
-   return res.status(404).json({message:"Creator not found"})
- }
-
- res.json({
-   email:creator.email
- })
-
- }catch(err){
-  res.status(500).json({message:err.message})
- }
-
-}
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

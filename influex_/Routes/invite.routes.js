@@ -1,8 +1,13 @@
-import express from "express"
-import {sendInvite} from "../controllers/invite.controller.js"
+import express from "express";
+import { sendInvite, respondInvite } from "../controllers/invite.controller.js";
+import auth from "../middlewares/auth.middleware.js"; // ensure user is logged in
 
-const router = express.Router()
+const router = express.Router();
 
-router.post("/send",sendInvite)
+// Brand sends an invite
+router.post("/send", auth, sendInvite);
 
-export default router
+// Influencer responds to invite (accept/reject)
+router.post("/respond", auth, respondInvite);
+
+export default router;
