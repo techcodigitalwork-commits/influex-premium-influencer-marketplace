@@ -66,7 +66,7 @@ export const decideApplication = async (req, res) => {
         { status: "rejected" }
       );
 
-      campaign.status = "ongoing";
+      campaign.status = "open";
       await campaign.save();
 
       let conversation = await Conversation.findOne({
@@ -285,7 +285,7 @@ export const getApplications = async (req, res) => {
 
     const applications = await Application.find({
       campaignId: id
-    }).populate("influencerId", "name email");
+    }) .sort({ createdAt: -1 }).populate("influencerId", "name email");
 
     return res.json({
       success: true,
@@ -309,7 +309,7 @@ export const getMyApplications = async (req, res) => {
 
     const applications = await Application.find({
       influencerId: req.user._id
-    }).populate("campaignId");
+    }) .sort({ createdAt: -1 }).populate("campaignId");
 
     res.status(200).json({
       success: true,
