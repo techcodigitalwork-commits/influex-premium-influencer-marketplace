@@ -7,7 +7,8 @@ export const createNotification = async (req, res) => {
     const { userId, message, type, link } = req.body;
 
     const notification = await createNotificationService({
-      userId,
+         user: userId,   // ✅ FIXED
+      sender: req.user?._id, 
       message,
       type,
       link
