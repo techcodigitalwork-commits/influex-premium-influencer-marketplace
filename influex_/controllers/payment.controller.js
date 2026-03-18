@@ -94,16 +94,19 @@ export const verifyPayment = async (req,res)=>{
 
  const escrow = await Escrow.create({
   dealId,
-  brandId:req.user._id,
+  brandId: req.user._id,
   influencerId,
   amount,
-  commission,
+  platformCommission: commission,   // FIXED NAME
   creatorAmount,
   orderId: razorpay_order_id,
   paymentId: razorpay_payment_id,
-  status:"funded"
- })
- await Deal.findByIdAndUpdate(dealId, { status: "active" });
+  paymentStatus: "funded"           // FIXED NAME
+});
+ await Deal.findByIdAndUpdate(dealId, {
+  paymentStatus: "paid",
+  workStatus: "in_progress"
+});
 
  res.json({
   success:true,
