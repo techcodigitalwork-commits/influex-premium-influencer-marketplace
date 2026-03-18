@@ -24,17 +24,15 @@ const notificationSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: [
-        "application_accepted",
-        "new_message",
-         "application_rejected",
-        "campaign_update",
-       "new_application",
-          "invite",
-      "invite_response",
-      "application",
-      "message",
-      "payment"
-      ],
+  "invite",
+  "invite_response",
+  "application",
+  "application_accepted",
+  "application_rejected",
+  "message",
+  "campaign_update",
+  "payment"
+],
       default: "application_accepted"
     },
     read: {
@@ -43,9 +41,17 @@ const notificationSchema = new mongoose.Schema(
     },
     link: {
       type: String // optional, frontend me redirect karne ke liye, eg. chat link
-    }
+    },
+    data: {
+  type: Object,
+  default: {}
+}
   },
   { timestamps: true }
 );
+// 🔥 indexes
+notificationSchema.index({ user: 1, createdAt: -1 });
+notificationSchema.index({ user: 1, read: 1 });
+
 
 export default mongoose.model("Notification", notificationSchema);

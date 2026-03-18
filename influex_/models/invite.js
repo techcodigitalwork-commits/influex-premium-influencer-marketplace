@@ -24,8 +24,12 @@ const inviteSchema = new mongoose.Schema({
     type: String,
     enum: ["pending","accepted","rejected"],
     default: "pending"
-  }
+  },
+  
 
 },{timestamps:true})
-
+inviteSchema.index(
+  { campaignId: 1, influencerId: 1 },
+  { unique: true }
+);
 export default mongoose.model("Invite",inviteSchema)
