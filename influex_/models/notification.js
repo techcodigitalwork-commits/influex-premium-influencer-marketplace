@@ -28,7 +28,12 @@ const notificationSchema = new mongoose.Schema(
         "new_message",
          "application_rejected",
         "campaign_update",
-       "new_application"
+       "new_application",
+          "invite",
+      "invite_response",
+      "application",
+      "message",
+      "payment"
       ],
       default: "application_accepted"
     },
