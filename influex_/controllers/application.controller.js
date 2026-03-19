@@ -246,3 +246,63 @@ export const applyToCampaign = async (req, res) => {
     });
   }
 };
+// ======================================================
+// GET APPLICATIONS (for brand)
+// ======================================================
+export const getApplications = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid campaign ID"
+      });
+    }
+
+    const applications = await Application.find({
+      campaignId: id
+    })
+    .sort({ createdAt: -1 })
+    .populate("influencerId", "name email");
+
+    return res.json({
+      success: true,
+      applications
+    });
+
+  } catch (error) {
+    console.error("Get Applications Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch applications"
+    });
+  }
+};
+
+// ======================================================
+// GET MY APPLICATIONS (for influencer)
+// ======================================================
+export const getMyApplications = async (req, res) => {
+  try {
+
+    const applications = await Application.find({
+      influencerId: req.user._id
+    })
+    .sort({ createdAt: -1 })
+    .populate("campaignId");
+
+    res.status(200).json({
+      success: true,
+      applications
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
