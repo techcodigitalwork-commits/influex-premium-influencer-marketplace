@@ -4,21 +4,21 @@ import Notification from "../models/notification.js";
 // Create notification via API (optional)
 export const createNotification = async (req, res) => {
   try {
-    const { userId, message, type, link } = req.body;
+    const { user, userId, message, type, link, applicationId } = req.body;
 
-    // 🔥 DEBUG
     console.log("BODY:", req.body);
 
-    // ✅ SAFETY CHECK (MOST IMPORTANT)
-    if (!userId) {
-      console.error("❌ userId missing in request");
+    // ✅ handle both user & userId
+    const finalUser = user || userId;
+
+    if (!finalUser) {
+      console.error("❌ user/userId missing in request");
       return res.status(400).json({
         success: false,
-        message: "userId is required"
+        message: "user or userId is required"
       });
     }
 
-    // ✅ OPTIONAL: message check
     if (!message) {
       return res.status(400).json({
         success: false,
@@ -27,11 +27,12 @@ export const createNotification = async (req, res) => {
     }
 
     const notification = await createNotificationService({
-      user: userId,
+      user: finalUser,   // ✅ always pass as user
       sender: req.user?._id,
       message,
       type,
-      link
+      link,
+      applicationId
     });
 
     res.status(201).json({
