@@ -81,7 +81,7 @@ export const decideApplication = async (req, res) => {
     // ===========================
     if (decisionLower === "accepted") {
 
-      campaign.status = "in_progress";
+      campaign.status = "accepted";
       await campaign.save();
 
       let conversation = await Conversation.findOne({
