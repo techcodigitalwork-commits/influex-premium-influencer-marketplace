@@ -85,8 +85,8 @@ export const decideApplication = async (req, res) => {
       }
 
       await createNotificationService({
-    userId: application.influencerId,
-    senderId: campaign.brandId,
+    user: application.influencerId,
+    sender: campaign.brandId,
     message: `Your application for "${campaign.title}" has been accepted!`,
     type: "application_accepted",
     link: `/campaign/${campaign._id}`,

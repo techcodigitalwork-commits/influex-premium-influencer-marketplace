@@ -1,8 +1,8 @@
-import Notification from "../models/notification.js";
-
 export const createNotificationService = async ({
   user,
+  userId,
   sender,
+  senderId,
   message,
   type = "application_accepted",
   link = "",
@@ -11,13 +11,16 @@ export const createNotificationService = async ({
 }) => {
   try {
 
-    if (!user) {
+    const finalUser = user || userId;
+    const finalSender = sender || senderId;
+
+    if (!finalUser) {
       throw new Error("User is required for notification");
     }
 
     const notification = await Notification.create({
-      user,        // ✅ direct schema field
-      sender,      // ✅ match schema
+      user: finalUser,
+      sender: finalSender,
       message,
       type,
       link,
