@@ -7,9 +7,6 @@ import { createNotificationService } from "../services/notification.service.js";
 import mongoose from "mongoose";
 
 // ======================================================
-// PLAN LIMITS
-// ======================================================
-// ======================================================
 // TOKEN CONFIG
 // ======================================================
 const TOKENS = {
@@ -36,7 +33,7 @@ export const checkSubscriptionExpiry = async (user) => {
 };
 
 // ======================================================
-// DECIDE APPLICATION (Brand Accept / Reject)
+// DECIDE APPLICATION (ACCEPT / REJECT)
 // ======================================================
 export const decideApplication = async (req, res) => {
   try {
@@ -61,7 +58,7 @@ export const decideApplication = async (req, res) => {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    // ✅ prevent multiple accept
+    // 🔥 prevent multiple accept
     if (decisionLower === "accepted") {
       const alreadyAccepted = await Application.findOne({
         campaignId: campaign._id,
@@ -76,16 +73,15 @@ export const decideApplication = async (req, res) => {
       }
     }
 
-    // ✅ update status
     application.status = decisionLower;
     await application.save();
 
-    // =====================================================
-    // ✅ ACCEPT
-    // =====================================================
+    // ===========================
+    // ACCEPT
+    // ===========================
     if (decisionLower === "accepted") {
 
-      campaign.status = "in_progress"; // 🔥 lock campaign
+      campaign.status = "in_progress";
       await campaign.save();
 
       let conversation = await Conversation.findOne({
@@ -114,12 +110,10 @@ export const decideApplication = async (req, res) => {
 
     }
 
-    // =====================================================
-    // ❌ REJECT
-    // =====================================================
+    // ===========================
+    // REJECT
+    // ===========================
     else if (decisionLower === "rejected") {
-
-      console.log("🔥 REJECT BLOCK TRIGGERED");
 
       await createNotificationService({
         userId: application.influencerId,
@@ -142,6 +136,113 @@ export const decideApplication = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update application"
+    });
+  }
+};
+
+// ======================================================
+// APPLY TO CAMPAIGN
+// ======================================================
+export const applyToCampaign = async (req, res) => {
+  try {
+
+    const campaignId = req.params.id;
+    const influencerId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+      return res.status(400).json({
+        success:false,
+        message:"Invalid Campaign ID"
+      });
+    }
+
+    const campaign = await Campaign.findById(campaignId);
+    if (!campaign) {
+      return res.status(404).json({
+        success:false,
+        message:"Campaign not found"
+      });
+    }
+
+    if (String(campaign.brandId) === String(influencerId)) {
+      return res.status(400).json({
+        success:false,
+        message:"You cannot apply to your own campaign"
+      });
+    }
+
+    if (campaign.status !== "open") {
+      return res.status(400).json({
+        success:false,
+        message:"Campaign is not open for applications"
+      });
+    }
+
+    const user = await User.findById(influencerId);
+    if (!user) {
+      return res.status(404).json({
+        success:false,
+        message:"User not found"
+      });
+    }
+
+    if (user.bits === undefined || user.bits === null) {
+      user.bits = TOKENS[user.plan] || 100;
+    }
+
+    if (user.bits < COST.APPLY) {
+      return res.status(403).json({
+        success:false,
+        message:"Not enough tokens. Upgrade your plan.",
+        bits:user.bits
+      });
+    }
+
+    const alreadyApplied = await Application.findOne({
+      campaignId,
+      influencerId
+    });
+
+    if (alreadyApplied) {
+      return res.status(400).json({
+        success:false,
+        message:"Already applied to this campaign"
+      });
+    }
+
+    const application = await Application.create({
+      campaignId,
+      influencerId,
+      bidAmount: req.body.bidAmount || 0,
+      proposal: req.body.proposal || "",
+      status:"pending"
+    });
+
+    user.bits -= COST.APPLY;
+    user.applicationsUsed = (user.applicationsUsed || 0) + 1;
+    await user.save();
+
+    await createNotificationService({
+      userId: campaign.brandId,
+      senderId: influencerId,
+      message: `New application received for "${campaign.title}"`,
+      type: "new_application",
+      link: `/campaign/${campaign._id}`,
+      applicationId: application._id
+    });
+
+    return res.status(201).json({
+      success:true,
+      message:"Application submitted successfully",
+      application,
+      remainingTokens: user.bits
+    });
+
+  } catch (error) {
+    console.error("Apply To Campaign Error:", error);
+    return res.status(500).json({
+      success:false,
+      message:"Failed to apply to campaign"
     });
   }
 };
