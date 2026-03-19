@@ -43,30 +43,49 @@ export const decideApplication = async (req, res) => {
     const { decision } = req.body;
     const decisionLower = decision.toLowerCase();
 
-    if (!["accepted", "rejected"].includes(decision.toLowerCase())) {
+    if (!["accepted", "rejected"].includes(decisionLower)) {
       return res.status(400).json({ success: false, message: "Invalid decision" });
     }
 
     const application = await Application.findById(req.params.id);
-    if (!application) return res.status(404).json({ success: false, message: "Application not found" });
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
 
     const campaign = await Campaign.findById(application.campaignId);
-    if (!campaign) return res.status(404).json({ success: false, message: "Campaign not found" });
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: "Campaign not found" });
+    }
 
     if (String(campaign.brandId) !== String(req.user._id)) {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    application.status = decision.toLowerCase();
+    // ✅ prevent multiple accept
+    if (decisionLower === "accepted") {
+      const alreadyAccepted = await Application.findOne({
+        campaignId: campaign._id,
+        status: "accepted"
+      });
+
+      if (alreadyAccepted) {
+        return res.status(400).json({
+          success: false,
+          message: "An influencer is already accepted for this campaign"
+        });
+      }
+    }
+
+    // ✅ update status
+    application.status = decisionLower;
     await application.save();
 
-    if (decision.toLowerCase() === "accepted") {
-      await Application.updateMany(
-        { campaignId: campaign._id, status: "pending", _id: { $ne: application._id } },
-        { status: "rejected" }
-      );
+    // =====================================================
+    // ✅ ACCEPT
+    // =====================================================
+    if (decisionLower === "accepted") {
 
-      campaign.status = "open";
+      campaign.status = "in_progress"; // 🔥 lock campaign
       await campaign.save();
 
       let conversation = await Conversation.findOne({
@@ -85,241 +104,44 @@ export const decideApplication = async (req, res) => {
       }
 
       await createNotificationService({
-    user: application.influencerId,
-    sender: campaign.brandId,
-    message: `Your application for "${campaign.title}" has been accepted!`,
-    type: "application_accepted",
-    link: `/campaign/${campaign._id}`,
-    applicationId: application._id
-  });
-
-}
-
-if (decisionLower === "rejected") {
-
-  await createNotificationService({
-    userId: application.influencerId,
-    senderId: campaign.brandId,
-    message: `Your application for "${campaign.title}" was rejected`,
-    type: "campaign_update",
-    link: `/campaign/${campaign._id}`,
-    applicationId: application._id
-  });
-
-}
-    
-
-    return res.json({ success: true, message: `Application ${decision.toLowerCase()}` });
-
-  } catch (error) {
-    console.error("Decide Application Error:", error);
-    return res.status(500).json({ success: false, message: "Failed to update application" });
-  }
-};
-
-//apply 
-export const applyToCampaign = async (req, res) => {
-  try {
-
-    const campaignId = req.params.id;
-    const influencerId = req.user._id;
-
-    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
-      return res.status(400).json({
-        success:false,
-        message:"Invalid Campaign ID"
+        userId: application.influencerId,
+        senderId: campaign.brandId,
+        message: `Your application for "${campaign.title}" has been accepted!`,
+        type: "application_accepted",
+        link: `/campaign/${campaign._id}`,
+        applicationId: application._id
       });
+
     }
 
-    const campaign = await Campaign.findById(campaignId);
-    if (!campaign) {
-      return res.status(404).json({
-        success:false,
-        message:"Campaign not found"
+    // =====================================================
+    // ❌ REJECT
+    // =====================================================
+    else if (decisionLower === "rejected") {
+
+      console.log("🔥 REJECT BLOCK TRIGGERED");
+
+      await createNotificationService({
+        userId: application.influencerId,
+        senderId: campaign.brandId,
+        message: `Your application for "${campaign.title}" was rejected`,
+        type: "application_rejected",
+        link: `/campaign/${campaign._id}`,
+        applicationId: application._id
       });
+
     }
-
-    if (String(campaign.brandId) === String(influencerId)) {
-      return res.status(400).json({
-        success:false,
-        message:"You cannot apply to your own campaign"
-      });
-    }
-
-    if (campaign.status !== "open") {
-      return res.status(400).json({
-        success:false,
-        message:"Campaign is not open for applications"
-      });
-    }
-
-    const user = await User.findById(influencerId);
-    if (!user) {
-      return res.status(404).json({
-        success:false,
-        message:"User not found"
-      });
-    }
-
-    // 🔥 DEFAULT TOKENS
-    if (user.bits === undefined || user.bits === null) {
-      user.bits = TOKENS[user.plan] || 100;
-    }
-
-    // 🔥 TOKEN CHECK
-    if (user.bits < COST.APPLY) {
-      return res.status(403).json({
-        success:false,
-        message:"Not enough tokens. Upgrade your plan.",
-        bits:user.bits
-      });
-    }
-
-    const alreadyApplied = await Application.findOne({
-      campaignId,
-      influencerId
-    });
-
-    if (alreadyApplied) {
-      return res.status(400).json({
-        success:false,
-        message:"Already applied to this campaign"
-      });
-    }
-
-    const application = await Application.create({
-      campaignId,
-      influencerId,
-      bidAmount: req.body.bidAmount || 0,
-      proposal: req.body.proposal || "",
-      status:"pending"
-    });
-
-    // 🔥 DEDUCT TOKENS
-    user.bits -= COST.APPLY;
-
-    user.applicationsUsed = (user.applicationsUsed || 0) + 1;
-
-    await user.save();
-
-    await createNotificationService({
-      userId: campaign.brandId,
-      senderId: influencerId,
-      message: `New application received for "${campaign.title}"`,
-      type: "new_application",
-      link: `/campaign/${campaign._id}`,
-      applicationId: application._id
-    });
-
-    return res.status(201).json({
-      success:true,
-      message:"Application submitted successfully",
-      application,
-      remainingTokens: user.bits
-    });
-
-  } catch (error) {
-    console.error("Apply To Campaign Error:", error);
-    return res.status(500).json({
-      success:false,
-      message:"Failed to apply to campaign"
-    });
-  }
-};
-// purchase subscription
-export const purchaseSubscription = async (req, res) => {
-  try {
-
-    const { plan } = req.body; // pro_monthly etc
-
-    const user = await User.findById(req.user.id);
-
-    if (!TOKENS[plan]) {
-      return res.status(400).json({
-        success:false,
-        message:"Invalid plan"
-      });
-    }
-
-    user.plan = plan;
-    user.bits = TOKENS[plan]; // 🔥 RESET TOKENS
-
-    // expiry set
-    if (plan.includes("monthly")) {
-      user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    } else {
-      user.subscriptionExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-    }
-
-    await user.save();
-
-    res.json({
-      success: true,
-      message: "Subscription activated",
-      plan,
-      tokens: user.bits
-    });
-
-  } catch (err) {
-    console.error("Purchase Subscription Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Subscription failed"
-    });
-  }
-};
-// ======================================================
-// GET APPLICATIONS (for brand)
-// ======================================================
-export const getApplications = async (req, res) => {
-  try {
-
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid campaign ID"
-      });
-    }
-
-    const applications = await Application.find({
-      campaignId: id
-    }) .sort({ createdAt: -1 }).populate("influencerId", "name email");
 
     return res.json({
       success: true,
-      applications
+      message: `Application ${decisionLower}`
     });
 
   } catch (error) {
-    console.error("Get Applications Error:", error);
-
+    console.error("Decide Application Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch applications"
-    });
-  }
-};
-// ======================================================
-// GET MY APPLICATIONS (for influencer)
-// ======================================================
-export const getMyApplications = async (req, res) => {
-  try {
-
-    const applications = await Application.find({
-      influencerId: req.user._id
-    }) .sort({ createdAt: -1 }).populate("campaignId");
-
-    res.status(200).json({
-      success: true,
-      applications
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
+      message: "Failed to update application"
     });
   }
 };
