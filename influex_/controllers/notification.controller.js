@@ -5,6 +5,7 @@ import Notification from "../models/notification.js";
 export const createNotification = async (req, res) => {
   try {
     const { userId, message, type, link } = req.body;
+    console.log("BODY:", req.body);
 
     const notification = await createNotificationService({
          user: userId,   // ✅ FIXED
