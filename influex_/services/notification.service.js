@@ -1,3 +1,4 @@
+import Notification from "../models/notification.js";
 export const createNotificationService = async ({
   user,
   userId,
