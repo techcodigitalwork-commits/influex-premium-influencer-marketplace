@@ -5,11 +5,30 @@ import Notification from "../models/notification.js";
 export const createNotification = async (req, res) => {
   try {
     const { userId, message, type, link } = req.body;
+
+    // 🔥 DEBUG
     console.log("BODY:", req.body);
 
+    // ✅ SAFETY CHECK (MOST IMPORTANT)
+    if (!userId) {
+      console.error("❌ userId missing in request");
+      return res.status(400).json({
+        success: false,
+        message: "userId is required"
+      });
+    }
+
+    // ✅ OPTIONAL: message check
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        message: "message is required"
+      });
+    }
+
     const notification = await createNotificationService({
-         user: userId,   // ✅ FIXED
-      sender: req.user?._id, 
+      user: userId,
+      sender: req.user?._id,
       message,
       type,
       link
@@ -19,6 +38,7 @@ export const createNotification = async (req, res) => {
       success: true,
       data: notification
     });
+
   } catch (error) {
     console.error("Create notification error:", error);
     res.status(500).json({
@@ -28,6 +48,7 @@ export const createNotification = async (req, res) => {
   }
 };
 
+// Get notifications
 export const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ user: req.user._id })
@@ -43,6 +64,7 @@ export const getNotifications = async (req, res) => {
   }
 };
 
+// Mark as read
 export const markNotificationRead = async (req, res) => {
   try {
     const { id } = req.params;
