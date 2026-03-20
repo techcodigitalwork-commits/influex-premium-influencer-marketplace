@@ -95,8 +95,13 @@ app.use("/api/dispute", disputeRoutes);
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
-mongoose
-  .connect(process.env.MONGO_URI)
+// Health check
+// app.get("/", (req, res) => {
+//   res.send("🚀 Influex Backend API is running");
+// });
+
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
 
@@ -104,151 +109,89 @@ mongoose
     const server = http.createServer(app);
 
     // Socket.io setup
-    // Socket.io setup
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-// Socket.io events
-io.on("connection", socket => {
-  console.log("User connected: ", socket.id);
-
-  socket.on("joinRoom", profileId => {
-    socket.join(profileId);
-    console.log(`User ${profileId} joined room`);
-  });
-
-  socket.on("sentMessage", async ({ conversationId, senderId, text }) => {
-
-    if (!text || !conversationId || !senderId) return;
-
-    // 🔴 CONTACT DETECTION
-    const blocked = detectContactInfo(text);
-
-    if (blocked) {
-      socket.emit("messageBlocked", {
-        message:
-          "Sharing contact information (phone, email, Instagram, WhatsApp) is not allowed. Please communicate inside the platform."
-      });
-      return;
-    }
-
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation) return;
-
-    const message = {
-      sender: senderId,
-      text,
-      createdAt: new Date()
-    };
-
-    conversation.messages.push(message);
-    conversation.lastMessage = text;
-    conversation.lastMessageAt = new Date();
-
-    await conversation.save();
-
-    // Notify participants
-    conversation.participants.forEach(participantId => {
-
-      io.to(participantId.toString()).emit("receiveMessage", {
-        conversationId,
-        message
-      });
-
-      if (participantId.toString() !== senderId.toString()) {
-
-        io.to(participantId.toString()).emit("newNotification", {
-          message: `New message from ${senderId}`,
-          conversationId
-        });
-
-        Notification.create({
-          user: participantId,
-          message: `New message from ${senderId}`,
-          type: "new_message",
-          link: `/chat/${conversationId}`
-        });
-
+    const io = new Server(server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
       }
     });
 
-  });
+    // Socket.io events
+    io.on("connection", (socket) => {
+      console.log("User connected: ", socket.id);
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected: ", socket.id);
-  });
-});
-    // const io = new Server(server, {
-    //   cors: {
-    //     origin: "*", // ya frontend origin
-    //     methods: ["GET", "POST"]
-    //   }
-    // });
+      socket.on("joinRoom", (profileId) => {
+        socket.join(profileId);
+        console.log(`User ${profileId} joined room`);
+      });
 
-    // // Socket.io events
-    // io.on("connection", socket => {
-    //   console.log("User connected: ", socket.id);
+      socket.on("sentMessage", async ({ conversationId, senderId, text }) => {
+        if (!text || !conversationId || !senderId) return;
 
-    //   socket.on("joinRoom", profileId => {
-    //     socket.join(profileId);
-    //     console.log(`User ${profileId} joined room`);
-    //   });
+        // Contact detection
+        const blocked = detectContactInfo(text);
+        if (blocked) {
+          socket.emit("messageBlocked", {
+            message:
+              "Sharing contact information (phone, email, Instagram, WhatsApp) is not allowed. Please communicate inside the platform."
+          });
+          return;
+        }
 
-    //   socket.on("sendMessage", async ({ conversationId, senderId, text }) => {
-    //     if (!text || !conversationId || !senderId) return;
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation) return;
 
-    //     const conversation = await Conversation.findById(conversationId);
-    //     if (!conversation) return;
+        const message = {
+          sender: senderId,
+          text,
+          createdAt: new Date()
+        };
 
-    //     const message = { sender: senderId, text, createdAt: new Date() };
-    //     conversation.messages.push(message);
-    //     conversation.lastMessage = text;
-    //     conversation.lastMessageAt = new Date();
-    //     await conversation.save();
+        conversation.messages.push(message);
+        conversation.lastMessage = text;
+        conversation.lastMessageAt = new Date();
+        await conversation.save();
 
-    //     // Notify participants
-    //     conversation.participants.forEach(participantId => {
-    //       io.to(participantId.toString()).emit("receiveMessage", {
-    //         conversationId,
-    //         message
-    //       });
+        // Notify participants
+        conversation.participants.forEach((participantId) => {
+          io.to(participantId.toString()).emit("receiveMessage", {
+            conversationId,
+            message
+          });
 
-    //       if (participantId.toString() !== senderId.toString()) {
-    //         io.to(participantId.toString()).emit("newNotification", {
-    //           message: `New message from ${senderId}`,
-    //           conversationId
-    //         });
+          if (participantId.toString() !== senderId.toString()) {
+            io.to(participantId.toString()).emit("newNotification", {
+              message: `New message from ${senderId}`,
+              conversationId
+            });
 
-    //         Notification.create({
-    //           user: participantId,
-    //           message: `New message from ${senderId}`,
-    //           type: "new_message",
-    //           link: `/chat/${conversationId}`
-    //         });
-    //       }
-    //     });
-    //   });
+            Notification.create({
+              user: participantId,
+              message: `New message from ${senderId}`,
+              type: "new_message",
+              link: `/chat/${conversationId}`
+            });
+          }
+        });
+      });
 
-    //   socket.on("disconnect", () => {
-    //     console.log("User disconnected: ", socket.id);
-    //   });
-    // });
+      socket.on("disconnect", () => {
+        console.log("User disconnected: ", socket.id);
+      });
+    });
 
-   server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT} with Socket.io`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use!`);
-    process.exit(1);
-  }
-});
+    // Start server
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server running on port ${PORT} with Socket.io`);
+    }).on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`Port ${PORT} is already in use!`);
+        process.exit(1);
+      }
+    });
 
   })
-  .catch(err => {
+  .catch((err) => {
     console.error("❌ MongoDB connection failed:", err);
   });
 import crypto from "crypto";
