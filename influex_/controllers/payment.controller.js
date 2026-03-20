@@ -1,7 +1,8 @@
 import Escrow from "../models/Escrow.js"
 import Deliverable from "../models/Deliverable.js"
 import mongoose from "mongoose"
-import Razorpay from "razorpay"
+import pkg from 'razorpay';
+const Razorpay = pkg;
 import crypto from "crypto"
 import Deal from "../models/deal.js"
 
