@@ -57,8 +57,13 @@ const app = express();
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
+
 app.use(morgan("dev"));
+app.use(
+  "/api/subscription/webhook",
+  express.raw({ type: "application/json" })
+);
+app.use(express.json());
 
 // Health check
 app.get("/", (req, res) => {
@@ -235,6 +240,11 @@ io.on("connection", socket => {
 
    server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT} with Socket.io`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use!`);
+    process.exit(1);
+  }
 });
 
   })
@@ -243,6 +253,70 @@ io.on("connection", socket => {
   });
 import crypto from "crypto";
 import User from "./models/user.js";
+// export const razorpayWebhook = async (req, res) => {
+//   try {
+//     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+//     const signature = req.headers["x-razorpay-signature"];
+
+//     // ✅ RAW BODY USE KAR
+//     const expectedSignature = crypto
+//       .createHmac("sha256", webhookSecret)
+//       .update(req.body)
+//       .digest("hex");
+
+//     if (expectedSignature !== signature) {
+//       return res.status(401).send("Invalid signature");
+//     }
+
+//     // ✅ VERIFY ke baad parse
+//     const data = JSON.parse(req.body.toString());
+
+//     const event = data.event;
+//     const payload = data.payload;
+
+//     // ✅ SAFER subId extraction
+//     let subId = null;
+
+//     if (payload.subscription) {
+//       subId = payload.subscription.entity.id;
+//     } else if (payload.invoice) {
+//       subId = payload.invoice.entity.subscription_id;
+//     }
+
+//     if (!subId) return res.status(200).send("No subscription found");
+
+//     const user = await User.findOne({ razorpaySubscriptionId: subId });
+
+//     if (!user) return res.status(200).send("User not found");
+
+//     // ✅ Activate
+//     if (event === "subscription.activated" || event === "invoice.paid") {
+//       user.isSubscribed = true;
+
+//       // (optional better)
+//       const expiry = payload.subscription?.entity?.current_end;
+//       if (expiry) {
+//         user.subscriptionExpiry = new Date(expiry * 1000);
+//       } else {
+//         user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+//       }
+
+//       await user.save();
+//     }
+
+//     // ❌ Cancel / fail
+//     if (event === "subscription.cancelled" || event === "payment.failed") {
+//       user.isSubscribed = false;
+//       await user.save();
+//     }
+
+//     res.status(200).send("OK");
+
+//   } catch (error) {
+//     console.error("Webhook Error:", error);
+//     res.status(500).send("Internal error");
+//   }
+// };
 
 export const razorpayWebhook = async (req, res) => {
   try {
