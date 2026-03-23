@@ -25,7 +25,7 @@ router.post("/activate", auth, purchaseSubscription);
 // ===============================
 router.post(
   "/webhook",
-  express.raw({ type: "application/json" }), // ⚠️ Important
+  // express.raw({ type: "application/json" }), // ⚠️ Important
   razorpayWebhook
 );
 

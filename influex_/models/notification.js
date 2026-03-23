@@ -32,7 +32,8 @@ const notificationSchema = new mongoose.Schema(
    "new_application",
   "message",
   "campaign_update",
-  "payment"
+  "payment",
+  "new_message"
 ],
       default: "application_accepted"
     },
