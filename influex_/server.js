@@ -196,119 +196,56 @@ mongoose.connect(process.env.MONGO_URI)
   });
 import crypto from "crypto";
 import User from "./models/user.js";
-// export const razorpayWebhook = async (req, res) => {
-//   try {
-//     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-//     const signature = req.headers["x-razorpay-signature"];
-
-//     // ✅ RAW BODY USE KAR
-//     const expectedSignature = crypto
-//       .createHmac("sha256", webhookSecret)
-//       .update(req.body)
-//       .digest("hex");
-
-//     if (expectedSignature !== signature) {
-//       return res.status(401).send("Invalid signature");
-//     }
-
-//     // ✅ VERIFY ke baad parse
-//     const data = JSON.parse(req.body.toString());
-
-//     const event = data.event;
-//     const payload = data.payload;
-
-//     // ✅ SAFER subId extraction
-//     let subId = null;
-
-//     if (payload.subscription) {
-//       subId = payload.subscription.entity.id;
-//     } else if (payload.invoice) {
-//       subId = payload.invoice.entity.subscription_id;
-//     }
-
-//     if (!subId) return res.status(200).send("No subscription found");
-
-//     const user = await User.findOne({ razorpaySubscriptionId: subId });
-
-//     if (!user) return res.status(200).send("User not found");
-
-//     // ✅ Activate
-//     if (event === "subscription.activated" || event === "invoice.paid") {
-//       user.isSubscribed = true;
-
-//       // (optional better)
-//       const expiry = payload.subscription?.entity?.current_end;
-//       if (expiry) {
-//         user.subscriptionExpiry = new Date(expiry * 1000);
-//       } else {
-//         user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-//       }
-
-//       await user.save();
-//     }
-
-//     // ❌ Cancel / fail
-//     if (event === "subscription.cancelled" || event === "payment.failed") {
-//       user.isSubscribed = false;
-//       await user.save();
-//     }
-
-//     res.status(200).send("OK");
-
-//   } catch (error) {
-//     console.error("Webhook Error:", error);
-//     res.status(500).send("Internal error");
-//   }
-// };
-
 export const razorpayWebhook = async (req, res) => {
   try {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers["x-razorpay-signature"];
-    const body = JSON.stringify(req.body);
 
+    // ✅ RAW BODY (Buffer)
     const expectedSignature = crypto
       .createHmac("sha256", webhookSecret)
-      .update(body)
+      .update(req.body)
       .digest("hex");
 
     if (expectedSignature !== signature) {
       return res.status(401).send("Invalid signature");
     }
 
-    const event = req.body.event;
-    const payload = req.body.payload;
+    // ✅ Parse after verify
+    const data = JSON.parse(req.body.toString());
 
-    // When subscription is activated (first payment succeeded)
-    if (event === "subscription.activated") {
-      const subId = payload.subscription.entity.id;
-      const user = await User.findOne({ razorpaySubscriptionId: subId });
-      if (user) {
-        user.isSubscribed = true;
-        user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        await user.save();
-      }
+    const event = data.event;
+    const payload = data.payload;
+
+    let subId = null;
+
+    if (payload.subscription) {
+      subId = payload.subscription.entity.id;
+    } else if (payload.invoice) {
+      subId = payload.invoice.entity.subscription_id;
     }
 
-    // When invoice (recurring charge) is paid
-    if (event === "invoice.paid") {
-      const subId = payload.invoice.entity.subscription_id;
-      const user = await User.findOne({ razorpaySubscriptionId: subId });
-      if (user) {
-        user.isSubscribed = true;
-        user.subscriptionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        await user.save();
-      }
+    if (!subId) return res.status(200).send("No subscription found");
+
+    const user = await User.findOne({ razorpaySubscriptionId: subId });
+    if (!user) return res.status(200).send("User not found");
+
+    // ✅ Activate / Renew
+    if (event === "subscription.activated" || event === "invoice.paid") {
+      user.isSubscribed = true;
+
+      const expiry = payload.subscription?.entity?.current_end;
+      user.subscriptionExpiry = expiry
+        ? new Date(expiry * 1000)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      await user.save();
     }
 
-    // Cancel or failure events
+    // ❌ Cancel / Fail
     if (event === "subscription.cancelled" || event === "payment.failed") {
-      const subId = payload.subscription.entity.id;
-      const user = await User.findOne({ razorpaySubscriptionId: subId });
-      if (user) {
-        user.isSubscribed = false;
-        await user.save();
-      }
+      user.isSubscribed = false;
+      await user.save();
     }
 
     res.status(200).send("OK");

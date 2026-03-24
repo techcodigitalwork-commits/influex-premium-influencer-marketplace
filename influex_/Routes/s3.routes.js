@@ -1,9 +1,12 @@
 import express from "express";
 import auth from "../middlewares/auth.middleware.js";
-import upload from "../middlewares/upload.middleware.js";
+import upload from "../middlewares/upload.middleware.js"; // image
+import video from "../middlewares/video.middleware.js";   // video
+import { uploadVideos } from "../controllers/s3controller.js";
 
 const router = express.Router();
 
+// ✅ IMAGE UPLOAD (S3 direct)
 router.post(
   "/upload/image",
   auth,
@@ -18,9 +21,17 @@ router.post(
 
     res.json({
       success: true,
-      url: req.file.location   // 🔥 S3 public URL
+      url: req.file.location
     });
   }
+);
+
+// 🔥 VIDEO UPLOAD (MAX 2 + COMPRESSION)
+router.post(
+  "/upload/videos",
+  auth,
+  video.array("videos", 2), // ✅ FIXED
+  uploadVideos
 );
 
 export default router;
