@@ -22,6 +22,7 @@ import fs from "fs";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../config/s3.js";
 import { compressVideo } from "../utils/compress.js";
+import Video from "../models/video.js";
 
 export const uploadVideos = async (req, res) => {
   try {
@@ -63,6 +64,20 @@ export const uploadVideos = async (req, res) => {
 
   } catch (err) {
     console.log(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+export const getAllVideos = async (req, res) => {
+  try {
+    const videos = await Video.find()
+      .populate("user", "name profileImage")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: videos,
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };

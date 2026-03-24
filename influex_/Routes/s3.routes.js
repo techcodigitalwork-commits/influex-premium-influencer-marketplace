@@ -33,5 +33,5 @@ router.post(
   video.array("videos", 2), // ✅ FIXED
   uploadVideos
 );
-
+router.get("/videos", auth, getAllVideos);
 export default router;
