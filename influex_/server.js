@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 // //console.log("AWS_REGION:", process.env.AWS_REGION);
-// console.log("AWS_BUCKET_NAME:", process.env.AWS_BUCKET_NAME);
+ console.log("AWS_BUCKET_NAME:", process.env.AWS_BUCKET_NAME);
 // console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "YES" : "NO");
 // console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID ? "YES" : "NO");
 // console.log("AWS_SECRET_ACCESS_KEY:", process.env.AWS_SECRET_ACCESS_KEY ? "YES" : "NO");
