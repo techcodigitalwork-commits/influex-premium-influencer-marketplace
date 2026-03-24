@@ -2,7 +2,7 @@ import express from "express";
 import auth from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js"; // image
 import video from "../middlewares/video.middleware.js";   // video
-import { uploadVideos } from "../controllers/s3controller.js";
+import { uploadVideos, getAllVideos } from "../controllers/s3controller.js";
 
 const router = express.Router();
 
