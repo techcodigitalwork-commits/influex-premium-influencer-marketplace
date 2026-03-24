@@ -1,7 +1,6 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
 import { s3 } from "../config/s3.js";
-console.log("BUCKET:", process.env.AWS_BUCKET_NAME);
 
 const upload = multer({
   storage: multerS3({
@@ -14,7 +13,6 @@ const upload = multer({
       cb(null, `profiles/${Date.now()}-${file.originalname}`);
     },
   }),
-  
 });
 
 export default upload;
