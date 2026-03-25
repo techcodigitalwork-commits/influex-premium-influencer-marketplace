@@ -1,8 +1,8 @@
 import express from "express";
 import auth from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js"; // image
-import video from "../middlewares/video.middleware.js";   // video
-import { uploadVideos, getAllVideos } from "../controllers/s3controller.js";
+import videoUpload from "../middlewares/video.middleware.js";  // video
+import { uploadPost, getAllPosts } from "../controllers/s3controller.js";
 
 const router = express.Router();
 
@@ -28,10 +28,10 @@ router.post(
 
 // 🔥 VIDEO UPLOAD (MAX 2 + COMPRESSION)
 router.post(
-  "/upload/videos",
+  "/create-post",
   auth,
-  video.array("videos", 2), // ✅ FIXED
-  uploadVideos
+  videoUpload.array("videos", 2), // 👈 videos
+  uploadPost
 );
-router.get("/videos", auth, getAllVideos);
+router.get("/posts", auth, getAllPosts);
 export default router;

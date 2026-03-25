@@ -5,8 +5,26 @@ const videoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
-  urls: [String], // multiple videos
-  caption: String,
+
+  // 🔥 videos
+  urls: [
+    {
+      type: String,
+    }
+  ],
+
+  // 🔥 images bhi add kar diye
+  images: [
+    {
+      type: String,
+    }
+  ],
+
+  caption: {
+    type: String,
+    default: "",
+  },
+
 }, { timestamps: true });
 
 export default mongoose.model("Video", videoSchema);

@@ -24,47 +24,54 @@ import { s3 } from "../config/s3.js";
 import { compressVideo } from "../utils/compress.js";
 import Video from "../models/video.js";
 
-export const uploadVideos = async (req, res) => {
+export const uploadPost = async (req, res) => {
   try {
-    const files = req.files;
-    const uploadedUrls = [];
+    const files = req.files; // 👈 videos (max 2)
+    const uploadedVideoUrls = [];
 
-    for (let file of files) {
-      const inputPath = file.path;
-      const outputPath = `uploads/compressed-${file.filename}.mp4`;
+    // 🎥 VIDEO UPLOAD + COMPRESS
+    if (files && files.length > 0) {
+      for (let file of files) {
+        const inputPath = file.path;
+        const outputPath = `uploads/compressed-${file.filename}.mp4`;
 
-      await compressVideo(inputPath, outputPath);
+        await compressVideo(inputPath, outputPath);
 
-      const fileStream = fs.createReadStream(outputPath);
+        const fileStream = fs.createReadStream(outputPath);
 
-      const key = `videos/${Date.now()}-${file.originalname}`;
+        const key = `videos/${Date.now()}-${file.originalname}`;
 
-      const command = new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: key,
-        Body: fileStream,
-        ContentType: "video/mp4",
-      });
+        const command = new PutObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: key,
+          Body: fileStream,
+          ContentType: "video/mp4",
+        });
 
-      await s3.send(command);
+        await s3.send(command);
 
-      const url = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`;
-      uploadedUrls.push(url);
+        const url = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`;
+        uploadedVideoUrls.push(url);
 
-      fs.unlinkSync(inputPath);
-      fs.unlinkSync(outputPath);
+        fs.unlinkSync(inputPath);
+        fs.unlinkSync(outputPath);
+      }
     }
 
-    // 🔥 YAHI MISSING THA (DB SAVE)
-    const newVideo = await Video.create({
-      user: req.user._id, // auth middleware se aata hai
-      urls: uploadedUrls,
+    // 🖼️ IMAGES (frontend se direct URLs aayengi)
+    const imageUrls = req.body.images || [];
+
+    // 🔥 FINAL SAVE (combined post)
+    const newPost = await Video.create({
+      user: req.user._id,
+      urls: uploadedVideoUrls,
+      images: imageUrls,
       caption: req.body.caption || "",
     });
 
     res.json({
-      message: "Videos uploaded, compressed & saved",
-      data: newVideo,
+      message: "Post created successfully",
+      data: newPost,
     });
 
   } catch (err) {
@@ -72,15 +79,23 @@ export const uploadVideos = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-export const getAllVideos = async (req, res) => {
+export const getAllPosts = async (req, res) => {
   try {
-    const videos = await Video.find()
+    const posts = await Video.find()
       .populate("user", "name profileImage")
       .sort({ createdAt: -1 });
 
+    const formattedPosts = posts.map(post => ({
+      ...post._doc,
+      media: [
+        ...(post.images || []),
+        ...(post.urls || [])
+      ]
+    }));
+
     res.json({
       success: true,
-      data: videos,
+      data: formattedPosts,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
