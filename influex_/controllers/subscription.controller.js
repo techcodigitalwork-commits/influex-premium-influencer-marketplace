@@ -33,6 +33,7 @@ export const createRazorpaySubscription = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     const { plan_id } = req.body;
+    console.log("BODY:", req.body);
     console.log("PLAN ID RECEIVED:", plan_id);
 
     const subscription = await razorpay.subscriptions.create({
