@@ -5,26 +5,26 @@ import User from "../models/user.js";
 import crypto from "crypto";
 
 const PLAN_DETAILS = {
-  "plan_pro_monthly_id": {
-    plan: "pro_monthly",
+  "plan_SVPLspo3dTExLj": {
+    plan: "brand_pro_monthly",
     tokens: 1000,
     duration: 30
   },
-  "plan_proplus_monthly_id": {
-    plan: "pro_plus_monthly",
-    tokens: 2500,
-    duration: 30
-  },
-  "plan_pro_yearly_id": {
-    plan: "pro_yearly",
-    tokens: 12000,
-    duration: 365
-  },
-  "plan_proplus_yearly_id": {
-    plan: "pro_plus_yearly",
-    tokens: 25000,
-    duration: 365
-  }
+  // "plan_proplus_monthly_id": {
+  //   plan: "pro_plus_monthly",
+  //   tokens: 2500,
+  //   duration: 30
+  // },
+  // "plan_pro_yearly_id": {
+  //   plan: "pro_yearly",
+  //   tokens: 12000,
+  //   duration: 365
+  // },
+  // "plan_proplus_yearly_id": {
+  //   plan: "pro_plus_yearly",
+  //   tokens: 25000,
+  //   duration: 365
+  // }
 };
 
 
@@ -106,6 +106,8 @@ export const razorpayWebhook = async (req, res) => {
       const subscription = event.payload.subscription.entity;
       const subId = subscription.id;
       const planId = subscription.plan_id;
+      console.log("EVENT:", event.event);
+console.log("PLAN ID:", event.payload.subscription.entity.plan_id);
 
       const user = await User.findOne({
         razorpaySubscriptionId: subId
@@ -153,3 +155,26 @@ export const razorpayWebhook = async (req, res) => {
     res.status(500).send("Webhook error");
   }
 };
+if (event.event === "subscription.charged") {
+
+  const subscription = event.payload.subscription.entity;
+  const subId = subscription.id;
+  const planId = subscription.plan_id;
+
+  const user = await User.findOne({
+    razorpaySubscriptionId: subId
+  });
+
+  if (user && PLAN_DETAILS[planId]) {
+
+    const planData = PLAN_DETAILS[planId];
+
+    user.bits += planData.tokens; // 🔥 REFILL
+
+    user.subscriptionExpiry = new Date(
+      Date.now() + planData.duration * 24 * 60 * 60 * 1000
+    );
+
+    await user.save();
+  }
+}
