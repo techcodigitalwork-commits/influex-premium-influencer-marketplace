@@ -72,3 +72,17 @@ export const uploadVideos = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+export const getAllVideos = async (req, res) => {
+  try {
+    const videos = await Video.find()
+      .populate("user", "name profileImage")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: videos,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
