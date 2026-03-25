@@ -26,14 +26,13 @@ import Video from "../models/video.js";
 
 export const uploadVideos = async (req, res) => {
   try {
-    const files = req.files; // 👈 max 2 videos
+    const files = req.files;
     const uploadedUrls = [];
 
     for (let file of files) {
       const inputPath = file.path;
       const outputPath = `uploads/compressed-${file.filename}.mp4`;
 
-      // 🔥 compress
       await compressVideo(inputPath, outputPath);
 
       const fileStream = fs.createReadStream(outputPath);
@@ -52,32 +51,24 @@ export const uploadVideos = async (req, res) => {
       const url = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`;
       uploadedUrls.push(url);
 
-      // 🧹 delete temp files
       fs.unlinkSync(inputPath);
       fs.unlinkSync(outputPath);
     }
 
-    res.json({
-      message: "Videos uploaded & compressed",
+    // 🔥 YAHI MISSING THA (DB SAVE)
+    const newVideo = await Video.create({
+      user: req.user._id, // auth middleware se aata hai
       urls: uploadedUrls,
+      caption: req.body.caption || "",
+    });
+
+    res.json({
+      message: "Videos uploaded, compressed & saved",
+      data: newVideo,
     });
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: err.message });
-  }
-};
-export const getAllVideos = async (req, res) => {
-  try {
-    const videos = await Video.find()
-      .populate("user", "name profileImage")
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: videos,
-    });
-  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
