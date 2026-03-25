@@ -59,7 +59,7 @@ const app = express();
 app.use(cors());
 
 app.use(morgan("dev"));
-app.use(
+app.post(
   "/api/subscription/webhook",
   express.raw({ type: "application/json" })
 );
