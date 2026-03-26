@@ -6,22 +6,22 @@ import crypto from "crypto";
 
 const PLAN_DETAILS = {
   "plan_SVPLspo3dTExLj": {
-    plan: "pro_monthly",
+    plan: "Brand_pro_monthly",
     tokens: 1000,
     duration: 30
   },
-  "plan_proplus_monthly_id": {
-    plan: "pro_plus_monthly",
+  "plan_SVnuPYiXBIl8x5": {
+    plan: "Brand_pro_plus_monthly",
     tokens: 2500,
     duration: 30
   },
-  "plan_pro_yearly_id": {
-    plan: "pro_yearly",
+  "plan_SVnyugqOr3jRyH": {
+    plan: "Brand_pro_yearly",
     tokens: 12000,
     duration: 365
   },
-  "plan_proplus_yearly_id": {
-    plan: "pro_plus_yearly",
+  "plan_SVo6c8aoVBSgMf": {
+    plan: "Brand_pro_plus_yearly",
     tokens: 25000,
     duration: 365
   }

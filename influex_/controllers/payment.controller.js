@@ -2,6 +2,7 @@ import Escrow from "../models/Escrow.js"
 import Deliverable from "../models/Deliverable.js"
 import mongoose from "mongoose"
 import Razorpay from 'razorpay';
+import User from "../models/user.js"
 
 
 import crypto from "crypto"
@@ -76,6 +77,11 @@ export const verifyPayment = async (req,res)=>{
     if(!deal){
       return res.status(404).json({message:"Deal not found"})
     }
+    if(deal.paymentStatus === "deposited"){
+  return res.status(400).json({
+    message:"Payment already done"
+  })
+}
 
     // 🔥 security: influencerId DB se lo
     const influencerId = deal.influencerId
@@ -107,16 +113,18 @@ export const verifyPayment = async (req,res)=>{
 
     // ✅ create escrow
     const escrow = await Escrow.create({
-      dealId,
-      brandId: req.user._id,
-      influencerId,
-      amount,
-      commission,
-      creatorAmount,
-      orderId: razorpay_order_id,
-      paymentId: razorpay_payment_id,
-      status:"funded"
-    })
+  dealId,
+  brandId: req.user._id,
+  influencerId,
+  amount,
+  commission,
+  creatorAmount,
+  orderId: razorpay_order_id,
+  paymentId: razorpay_payment_id,
+  paymentSignature: razorpay_signature,
+  status:"funded",
+  fundedAt: new Date()
+})
 
     // ✅ update deal (CRITICAL)
     await Deal.findByIdAndUpdate(dealId,{
@@ -138,83 +146,141 @@ export const verifyPayment = async (req,res)=>{
 
 
 // =====================================
-// APPROVE DELIVERABLE & RELEASE PAYMENT
-// =====================================
-export const approveDeliverable = async (req,res)=>{
-  try{
 
-    const {deliverableId} = req.body
+export const approveDeliverable = async (req, res) => {
+  try {
+    const { deliverableId } = req.body;
 
-    if(!mongoose.Types.ObjectId.isValid(deliverableId)){
-      return res.status(400).json({message:"Invalid deliverableId"})
+    if (!mongoose.Types.ObjectId.isValid(deliverableId)) {
+      return res.status(400).json({ message: "Invalid deliverableId" });
     }
 
-    const deliverable = await Deliverable.findById(deliverableId)
+    const deliverable = await Deliverable.findById(deliverableId);
 
-    if(!deliverable){
+    if (!deliverable) {
       return res.status(404).json({
-        message:"Deliverable not found"
-      })
+        message: "Deliverable not found",
+      });
     }
 
-    const deal = await Deal.findById(deliverable.dealId)
+    const deal = await Deal.findById(deliverable.dealId);
 
-    if(!deal){
+    if (!deal) {
       return res.status(404).json({
-        message:"Deal not found"
-      })
+        message: "Deal not found",
+      });
     }
 
     // 🔥 only brand can approve
-    if(deal.brandId.toString() !== req.user._id.toString()){
+    if (deal.brandId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
-        message:"Not authorized"
-      })
+        message: "Not authorized",
+      });
     }
 
     const escrow = await Escrow.findOne({
-      dealId: deliverable.dealId
-    })
+      dealId: deliverable.dealId,
+    });
 
-    if(!escrow){
+    if (!escrow) {
       return res.status(404).json({
-        message:"Escrow not found"
-      })
+        message: "Escrow not found",
+      });
     }
 
-    if(escrow.status === "released"){
+    if (escrow.status === "released") {
       return res.status(400).json({
-        message:"Payment already released"
-      })
+        message: "Payment already released",
+      });
     }
 
-    // ✅ approve deliverable
-    deliverable.status = "approved"
-    await deliverable.save()
+    // 🔥 GET CREATOR FUND ACCOUNT
+    const creator = await User.findById(deal.influencerId);
 
-    // ✅ release escrow
-    escrow.status = "released"
-    escrow.releaseDate = new Date()
-    await escrow.save()
+    if (!creator || !creator.fund_account_id) {
+      return res.status(400).json({
+        message: "Creator bank not setup",
+      });
+    }
 
-    // ✅ update deal
-    await Deal.findByIdAndUpdate(deliverable.dealId,{
-      paymentStatus:"released",
-      workStatus:"approved"
-    })
+    // ======================================
+    // 💸 PAYOUT (MAIN PART)
+    // ======================================
+    let payout;
 
-    res.json({
-      success:true,
-      message:"Payment released to creator",
+    try {
+      // ❌ duplicate payout protection
+      if (escrow.payoutId) {
+        return res.status(400).json({
+          message: "Payout already initiated",
+        });
+      }
+
+      payout = await razorpay.payouts.create({
+        account_number: process.env.RAZORPAYX_ACCOUNT_NUMBER,
+        fund_account_id: creator.fund_account_id,
+        amount: escrow.creatorAmount * 100,
+        currency: "INR",
+        mode: "IMPS",
+        purpose: "payout",
+        narration: `Deal payout for ${deal._id}`,
+
+        reference_id: `deal_${deal._id}`,
+
+        notes: {
+          dealId: deal._id.toString(),
+          escrowId: escrow._id.toString(),
+          influencerId: creator._id.toString(),
+        },
+
+        queue_if_low_balance: true,
+      });
+
+    } catch (err) {
+      console.log("PAYOUT ERROR:", err);
+
+      escrow.status = "failed";
+      escrow.payoutStatus = "failed";
+      await escrow.save();
+
+      return res.status(500).json({
+        message: "Payout failed",
+      });
+    }
+
+    // ======================================
+    // ✅ UPDATE DB AFTER PAYOUT CREATED
+    // ======================================
+
+    deliverable.status = "approved";
+    await deliverable.save();
+
+    escrow.status = "processing";
+    escrow.payoutStatus = "processing";
+    escrow.releaseDate = new Date();
+    escrow.payoutId = payout.id;
+    escrow.fundAccountId = creator.fund_account_id;
+
+    await escrow.save();
+
+    await Deal.findByIdAndUpdate(deliverable.dealId, {
+      paymentStatus: "processing",
+      workStatus: "approved",
+    });
+
+    return res.json({
+      success: true,
+      message: "Payout initiated (processing)",
+      payoutId: payout.id,
       creatorPaid: escrow.creatorAmount,
-      platformCommission: escrow.commission
-    })
+      platformCommission: escrow.commission,
+    });
 
-  }catch(err){
-    console.log("APPROVE ERROR:", err)
-    res.status(500).json({message:err.message})
+  } catch (err) {
+    console.log("APPROVE ERROR:", err);
+    return res.status(500).json({ message: err.message });
   }
-}
+};
 export const submitDeliverable = async (req,res)=>{
   try{
 
@@ -276,3 +342,45 @@ export const submitDeliverable = async (req,res)=>{
     res.status(500).json({message:err.message})
   }
 }
+export const createContact = async (req, res) => {
+  const { name, email } = req.body;
+
+ const contact = await razorpay.contacts.create({
+  name,
+  email,
+  type: "employee",
+  reference_id: `user_${req.user.id}`,
+});
+
+await User.findByIdAndUpdate(req.user.id, {
+  razorpay_contact_id: contact.id
+});
+
+  res.json(contact);
+};
+export const createFundAccount = async (req, res) => {
+ const user = await User.findById(req.user.id)
+ const { name, ifsc, account_number } = req.body;
+ if(!user.razorpay_contact_id){
+  return res.status(400).json({
+    message: "Create contact first"
+  })
+}
+
+const fundAccount = await razorpay.fund_accounts.create({
+  contact_id: user.razorpay_contact_id,
+  account_type: "bank_account",
+  bank_account: {
+    name,
+    ifsc,
+    account_number,
+  },
+});
+
+  // DB me sirf ye save kar
+  await User.findByIdAndUpdate(req.user.id, {
+    fund_account_id: fundAccount.id,
+  });
+
+  res.json(fundAccount);
+};

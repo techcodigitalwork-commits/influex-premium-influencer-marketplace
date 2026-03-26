@@ -196,12 +196,15 @@ mongoose.connect(process.env.MONGO_URI)
   });
 import crypto from "crypto";
 import User from "./models/user.js";
+import Escrow from "./models/Escrow.js";
+import Deal from "./models/deal.js";
+
 export const razorpayWebhook = async (req, res) => {
   try {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers["x-razorpay-signature"];
 
-    // ✅ RAW BODY (Buffer)
+    // ✅ verify signature (RAW BODY)
     const expectedSignature = crypto
       .createHmac("sha256", webhookSecret)
       .update(req.body)
@@ -211,11 +214,13 @@ export const razorpayWebhook = async (req, res) => {
       return res.status(401).send("Invalid signature");
     }
 
-    // ✅ Parse after verify
     const data = JSON.parse(req.body.toString());
-
     const event = data.event;
     const payload = data.payload;
+
+    // ======================================
+    // 🔥 SUBSCRIPTION LOGIC (UNCHANGED)
+    // ======================================
 
     let subId = null;
 
@@ -225,30 +230,75 @@ export const razorpayWebhook = async (req, res) => {
       subId = payload.invoice.entity.subscription_id;
     }
 
-    if (!subId) return res.status(200).send("No subscription found");
+    if (subId) {
+      const user = await User.findOne({ razorpaySubscriptionId: subId });
 
-    const user = await User.findOne({ razorpaySubscriptionId: subId });
-    if (!user) return res.status(200).send("User not found");
+      if (user) {
+        if (event === "subscription.activated" || event === "invoice.paid") {
+          user.isSubscribed = true;
 
-    // ✅ Activate / Renew
-    if (event === "subscription.activated" || event === "invoice.paid") {
-      user.isSubscribed = true;
+          const expiry = payload.subscription?.entity?.current_end;
+          user.subscriptionExpiry = expiry
+            ? new Date(expiry * 1000)
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-      const expiry = payload.subscription?.entity?.current_end;
-      user.subscriptionExpiry = expiry
-        ? new Date(expiry * 1000)
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          await user.save();
+        }
 
-      await user.save();
+        if (event === "subscription.cancelled" || event === "payment.failed") {
+          user.isSubscribed = false;
+          await user.save();
+        }
+      }
     }
 
-    // ❌ Cancel / Fail
-    if (event === "subscription.cancelled" || event === "payment.failed") {
-      user.isSubscribed = false;
-      await user.save();
+    // ======================================
+    // 💸 PAYOUT LOGIC (NEW 🔥)
+    // ======================================
+
+    if (event === "payout.processed") {
+      const payout = payload.payout.entity;
+
+      const escrow = await Escrow.findOne({
+        payoutId: payout.id
+      });
+
+      if (escrow) {
+        escrow.status = "released";
+        escrow.payoutStatus = "processed";
+        await escrow.save();
+
+        await Deal.findByIdAndUpdate(escrow.dealId, {
+          paymentStatus: "released"
+        });
+      }
     }
 
+    if (event === "payout.failed") {
+      const payout = payload.payout.entity;
+
+      const escrow = await Escrow.findOne({
+        payoutId: payout.id
+      });
+
+      if (escrow) {
+        escrow.status = "failed";
+        escrow.payoutStatus = "failed";
+        escrow.payoutFailureReason = payout.failure_reason;
+
+        await escrow.save();
+
+        await Deal.findByIdAndUpdate(escrow.dealId, {
+          paymentStatus: "failed"
+        });
+      }
+    }
+
+    // ======================================
+    // ✅ DONE
+    // ======================================
     res.status(200).send("OK");
+
   } catch (error) {
     console.error("Webhook Error:", error);
     res.status(500).send("Internal error");
