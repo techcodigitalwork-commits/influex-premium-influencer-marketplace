@@ -101,3 +101,27 @@ export const getAllPosts = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// GET /posts/:userId
+export const getPostsByUser = async (req, res) => {
+  try {
+    const posts = await Video.find({ user: req.params.userId })
+      .populate("user", "name profileImage")
+      .sort({ createdAt: -1 });
+
+    const formatted = posts.map(post => ({
+      ...post._doc,
+      media: [
+        ...(post.images || []),
+        ...(post.urls || [])
+      ]
+    }));
+
+    res.json({
+      success: true,
+      data: formatted
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

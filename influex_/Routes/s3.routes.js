@@ -2,7 +2,7 @@ import express from "express";
 import auth from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js"; // image
 import videoUpload from "../middlewares/video.middleware.js";  // video
-import { uploadPost, getAllPosts } from "../controllers/s3controller.js";
+import { uploadPost, getAllPosts, getPostsByUser } from "../controllers/s3controller.js";
 
 const router = express.Router();
 
@@ -34,4 +34,5 @@ router.post(
   uploadPost
 );
 router.get("/posts", auth, getAllPosts);
+router.get("/posts/:userId", auth, getPostsByUser);
 export default router;
