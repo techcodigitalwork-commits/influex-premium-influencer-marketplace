@@ -1,24 +1,23 @@
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import User from "../models/user.js";
+import sendEmail from "../utils/sendEmail.js";
 
-// Token generator
+// ---------------------- JWT TOKEN GENERATOR ----------------------
 const generateToken = (user) => {
   return jwt.sign(
-    {
-      id: user._id,
-      role: user.role
-    },
+    { id: user._id, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
 };
 
 // ---------------------- Dynamic Bits ----------------------
-// Roles / categories that get free bits
 const ROLE_BITS = {
   influencer: 100,
-  brand : 100,
+  brand: 100,
   model: 100,
   photographer: 100,
   food: 150,
@@ -34,37 +33,44 @@ export const signup = async (req, res) => {
     // Check if email exists
     const exists = await User.findOne({ email });
     if (exists) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered"
-      });
+      return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Assign bits dynamically based on role/category
-    // Brands get 0 bits, others get ROLE_BITS
-    //const bits = ROLE_BITS[roleLower] || 0;
+    // Dynamic bits
     const bits = ROLE_BITS[roleLower] ?? 100;
-    // Create user with subscription fields
+
+    // Create verification token
+    const emailToken = crypto.randomBytes(32).toString("hex");
+
+    // Create user
     const user = await User.create({
       email,
       passwordHash: hashedPassword,
       role: roleLower,
-      bits: bits,                 // ← Dynamic bits here
+      bits,
       applicationsUsed: 0,
-      campaignsCreated: 0,        // for brand campaigns
+      campaignsCreated: 0,
       isSubscribed: false,
       subscriptionExpiry: null,
-      profileStatus: "pending"    // optional: track profile completion
+      profileStatus: "pending",
+      isEmailVerified: false,
+      emailVerificationToken: emailToken,
+      emailVerificationTokenExpires: Date.now() + 24*60*60*1000 // 24h expiry
     });
+
+    // Send verification email
+    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${emailToken}&email=${email}`;
+    await sendEmail(email, "Verify your email", `Click here to verify: <a href="${verifyUrl}">Verify Email</a>`);
 
     const token = generateToken(user);
 
     res.status(201).json({
       success: true,
       token,
+      message: "Signup successful. Please verify your email.",
       user: {
         id: user._id,
         role: user.role,
@@ -76,10 +82,31 @@ export const signup = async (req, res) => {
 
   } catch (err) {
     console.error("Signup Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Signup failed"
+    res.status(500).json({ success: false, message: "Signup failed" });
+  }
+};
+
+// ---------------------- EMAIL VERIFICATION ----------------------
+export const verifyEmail = async (req, res) => {
+  try {
+    const { email, token } = req.query;
+
+    const user = await User.findOne({
+      email,
+      emailVerificationToken: token,
+      emailVerificationTokenExpires: { $gt: Date.now() }
     });
+
+    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationTokenExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Email verified successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -89,19 +116,15 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid credentials"
-      });
-    }
+    if (!user) return res.status(400).json({ success: false, message: "Invalid credentials" });
 
+    // Check password
     const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid credentials"
-      });
+    if (!match) return res.status(400).json({ success: false, message: "Invalid credentials" });
+
+    // Check email verification
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ success: false, message: "Please verify your email before logging in." });
     }
 
     const token = generateToken(user);
@@ -122,9 +145,184 @@ export const login = async (req, res) => {
 
   } catch (err) {
     console.error("Login Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Login failed"
-    });
+    res.status(500).json({ success: false, message: "Login failed" });
   }
 };
+
+// ---------------------- FORGOT PASSWORD ----------------------
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 60*60*1000; // 1 hour
+    await user.save();
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}&email=${email}`;
+    await sendEmail(email, "Reset Password", `Click to reset your password: <a href="${resetUrl}">Reset Password</a>`);
+
+    res.json({ success: true, message: "Password reset email sent" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ---------------------- RESET PASSWORD ----------------------
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, token, newPassword } = req.body;
+
+    const user = await User.findOne({
+      email,
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({ success: false, message: "Invalid or expired token" });
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successful" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// import bcrypt from "bcryptjs";
+// import jwt from "jsonwebtoken";
+// import User from "../models/user.js";
+
+// // Token generator
+// const generateToken = (user) => {
+//   return jwt.sign(
+//     {
+//       id: user._id,
+//       role: user.role
+//     },
+//     process.env.JWT_SECRET,
+//     { expiresIn: "7d" }
+//   );
+// };
+
+// // ---------------------- Dynamic Bits ----------------------
+// // Roles / categories that get free bits
+// const ROLE_BITS = {
+//   influencer: 100,
+//   brand : 100,
+//   model: 100,
+//   photographer: 100,
+//   food: 150,
+//   travel: 120
+// };
+
+// // ---------------------- SIGNUP ----------------------
+// export const signup = async (req, res) => {
+//   try {
+//     const { email, password, role } = req.body;
+//     const roleLower = role.toLowerCase();
+
+//     // Check if email exists
+//     const exists = await User.findOne({ email });
+//     if (exists) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email already registered"
+//       });
+//     }
+
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Assign bits dynamically based on role/category
+//     // Brands get 0 bits, others get ROLE_BITS
+//     //const bits = ROLE_BITS[roleLower] || 0;
+//     const bits = ROLE_BITS[roleLower] ?? 100;
+//     // Create user with subscription fields
+//     const user = await User.create({
+//       email,
+//       passwordHash: hashedPassword,
+//       role: roleLower,
+//       bits: bits,                 // ← Dynamic bits here
+//       applicationsUsed: 0,
+//       campaignsCreated: 0,        // for brand campaigns
+//       isSubscribed: false,
+//       subscriptionExpiry: null,
+//       profileStatus: "pending"    // optional: track profile completion
+//     });
+
+//     const token = generateToken(user);
+
+//     res.status(201).json({
+//       success: true,
+//       token,
+//       user: {
+//         id: user._id,
+//         role: user.role,
+//         bits: user.bits,
+//         isSubscribed: user.isSubscribed,
+//         campaignsCreated: user.campaignsCreated
+//       }
+//     });
+
+//   } catch (err) {
+//     console.error("Signup Error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Signup failed"
+//     });
+//   }
+// };
+
+// // ---------------------- LOGIN ----------------------
+// export const login = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid credentials"
+//       });
+//     }
+
+//     const match = await bcrypt.compare(password, user.passwordHash);
+//     if (!match) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid credentials"
+//       });
+//     }
+
+//     const token = generateToken(user);
+
+//     res.json({
+//       success: true,
+//       token,
+//       user: {
+//         id: user._id,
+//         role: user.role,
+//         bits: user.bits,
+//         plan: user.plan,
+//         isSubscribed: user.isSubscribed,
+//         campaignsCreated: user.campaignsCreated
+//       },
+//       hasProfile: user.profileStatus === "completed"
+//     });
+
+//   } catch (err) {
+//     console.error("Login Error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Login failed"
+//     });
+//   }
+// };

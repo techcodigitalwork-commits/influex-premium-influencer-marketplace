@@ -71,6 +71,32 @@ const userSchema = new mongoose.Schema({
     enum: ["free", "pro_monthly", "pro_plus_monthly", "pro_yearly", "pro_plus_yearly"],
     default: "free"
   },
+   // =======================
+  // 🔥 EMAIL VERIFICATION
+  // =======================
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String,
+    default: null
+  },
+  emailVerificationTokenExpires: {
+    type: Date
+  },
+
+  // =======================
+  // 🔥 FORGOT PASSWORD
+  // =======================
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date
+  },
+
 
 }, { timestamps: true });
 
