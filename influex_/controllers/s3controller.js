@@ -167,6 +167,10 @@ export const deletePost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+import fs from "fs";
+import path from "path";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
 export const updatePost = async (req, res) => {
   try {
     const post = await Video.findById(req.params.id);
@@ -185,28 +189,41 @@ export const updatePost = async (req, res) => {
     // 🎥 New videos upload (optional)
     if (req.files && req.files.length > 0) {
       for (let file of req.files) {
-        const inputPath = file.path;
-        const outputPath = `uploads/compressed-${file.filename}.mp4`;
+        try {
+          const inputPath = file.path;
 
-        await compressVideo(inputPath, outputPath);
+          // 🔥 FIX: safe filename
+          const ext = path.extname(file.originalname) || ".mp4";
+          const safeName = file.filename || `${Date.now()}-${Math.random()}`;
 
-        const fileStream = fs.createReadStream(outputPath);
-        const key = `videos/${Date.now()}-${file.originalname}`;
+          const outputPath = `uploads/compressed-${safeName}${ext}`;
 
-        const command = new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: key,
-          Body: fileStream,
-          ContentType: "video/mp4",
-        });
+          // 🎥 compress
+          await compressVideo(inputPath, outputPath);
 
-        await s3.send(command);
+          const fileStream = fs.createReadStream(outputPath);
 
-        const url = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`;
-        uploadedVideoUrls.push(url);
+          const key = `videos/${Date.now()}-${file.originalname}`;
 
-        fs.unlinkSync(inputPath);
-        fs.unlinkSync(outputPath);
+          const command = new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: key,
+            Body: fileStream,
+            ContentType: "video/mp4",
+          });
+
+          await s3.send(command);
+
+          const url = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`;
+          uploadedVideoUrls.push(url);
+
+          // 🧹 cleanup safely
+          if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+          if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+
+        } catch (fileErr) {
+          console.log("❌ File processing error:", fileErr);
+        }
       }
     }
 
@@ -227,7 +244,7 @@ export const updatePost = async (req, res) => {
     });
 
   } catch (err) {
-    console.log(err);
+    console.log("❌ Update Post Error:", err);
     res.status(500).json({ error: err.message });
   }
 };

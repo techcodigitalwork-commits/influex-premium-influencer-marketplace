@@ -25,24 +25,33 @@ const ROLE_BITS = {
 };
 
 // ---------------------- SIGNUP ----------------------
+
+// ---------------------- SIGNUP ----------------------
 export const signup = async (req, res) => {
   try {
     const { email, password, role } = req.body;
+
+    if (!email || !password || !role) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
     const roleLower = role.toLowerCase();
 
-    // Check if email exists
+    // Check existing
     const exists = await User.findOne({ email });
     if (exists) {
-      return res.status(400).json({ success: false, message: "Email already registered" });
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered"
+      });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Dynamic bits
     const bits = ROLE_BITS[roleLower] ?? 100;
 
-    // Create verification token
+    // Token
     const emailToken = crypto.randomBytes(32).toString("hex");
 
     // Create user
@@ -58,12 +67,24 @@ export const signup = async (req, res) => {
       profileStatus: "pending",
       isEmailVerified: false,
       emailVerificationToken: emailToken,
-      emailVerificationTokenExpires: Date.now() + 24*60*60*1000 // 24h expiry
+      emailVerificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000
     });
 
-    // Send verification email
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${emailToken}&email=${email}`;
-    await sendEmail(email, "Verify your email", `Click here to verify: <a href="${verifyUrl}">Verify Email</a>`);
+    // 🔥 EMAIL SEND (SAFE VERSION)
+    try {
+      const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${emailToken}&email=${email}`;
+
+      await sendEmail(
+        email,
+        "Verify your email",
+        `<h3>Verify your account</h3>
+         <p>Click below:</p>
+         <a href="${verifyUrl}">Verify Email</a>`
+      );
+
+    } catch (mailErr) {
+      console.log("❌ Email failed (but signup success):", mailErr.message);
+    }
 
     const token = generateToken(user);
 
@@ -81,12 +102,16 @@ export const signup = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Signup Error:", err);
-    res.status(500).json({ success: false, message: "Signup failed" });
+    console.error("🔥 FULL SIGNUP ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 };
 
-// ---------------------- EMAIL VERIFICATION ----------------------
+
+// ---------------------- VERIFY EMAIL ----------------------
 export const verifyEmail = async (req, res) => {
   try {
     const { email, token } = req.query;
@@ -97,18 +122,23 @@ export const verifyEmail = async (req, res) => {
       emailVerificationTokenExpires: { $gt: Date.now() }
     });
 
-    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
     user.isEmailVerified = true;
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
+
     await user.save();
 
     res.json({ success: true, message: "Email verified successfully" });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // ---------------------- LOGIN ----------------------
 export const login = async (req, res) => {
@@ -116,15 +146,20 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ success: false, message: "Invalid credentials" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
-    // Check password
     const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) return res.status(400).json({ success: false, message: "Invalid credentials" });
+    if (!match) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
-    // Check email verification
+    // ❌ block if not verified
     if (!user.isEmailVerified) {
-      return res.status(403).json({ success: false, message: "Please verify your email before logging in." });
+      return res.status(403).json({
+        message: "Please verify your email first"
+      });
     }
 
     const token = generateToken(user);
@@ -145,26 +180,46 @@ export const login = async (req, res) => {
 
   } catch (err) {
     console.error("Login Error:", err);
-    res.status(500).json({ success: false, message: "Login failed" });
+    res.status(500).json({ message: "Login failed" });
   }
 };
+
 
 // ---------------------- FORGOT PASSWORD ----------------------
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     const token = crypto.randomBytes(32).toString("hex");
+
     user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 60*60*1000; // 1 hour
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
+
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}&email=${email}`;
-    await sendEmail(email, "Reset Password", `Click to reset your password: <a href="${resetUrl}">Reset Password</a>`);
+    try {
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}&email=${email}`;
 
-    res.json({ success: true, message: "Password reset email sent" });
+      await sendEmail(
+        email,
+        "Reset Password",
+        `<h3>Reset Password</h3>
+         <a href="${resetUrl}">Click here</a>`
+      );
+
+    } catch (mailErr) {
+      console.log("❌ Reset email failed:", mailErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: "Password reset email sent"
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
