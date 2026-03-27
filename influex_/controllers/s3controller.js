@@ -169,7 +169,7 @@ export const deletePost = async (req, res) => {
 };
 
 import path from "path";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+// import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 export const updatePost = async (req, res) => {
   try {
