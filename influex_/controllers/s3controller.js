@@ -167,7 +167,7 @@ export const deletePost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-import fs from "fs";
+
 import path from "path";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
