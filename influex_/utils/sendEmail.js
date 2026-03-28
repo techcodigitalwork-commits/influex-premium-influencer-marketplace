@@ -1,36 +1,35 @@
-import dotenv from "dotenv";
-dotenv.config(); // 🔥 SABSE PEHLE
-
 import nodemailer from "nodemailer";
 
-console.log("USER:", process.env.EMAIL_USER);
-console.log("PASS:", process.env.EMAIL_PASS);
+export const getTransporter = () => {
+  console.log("MAIL USER:", process.env.EMAIL_USER);
+  console.log("MAIL PASS:", process.env.EMAIL_PASS);
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+};
 
 // --------------------------
 // Send Email Function
 // --------------------------
 const sendEmail = async (to, subject, htmlContent, textContent) => {
   try {
+    const transporter = getTransporter(); // 🔥 YAHI ADD KARNA THA
+
     await transporter.sendMail({
       from: `"${process.env.EMAIL_FROM_NAME || "Your App"}" <${process.env.EMAIL_USER}>`,
-      to,           // recipient email
-      subject,      // email subject
-      text: textContent || "Please use an HTML compatible client", // fallback plain text
+      to,
+      subject,
+      text: textContent || "Please use an HTML compatible client",
       html: htmlContent
     });
+
     console.log(`Email sent to ${to}`);
   } catch (err) {
     console.error("Email sending error:", err);
