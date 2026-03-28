@@ -74,13 +74,21 @@ export const signup = async (req, res) => {
     try {
       const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${emailToken}&email=${email}`;
 
-      await sendEmail(
-        email,
-        "Verify your email",
-        `<h3>Verify your account</h3>
-         <p>Click below:</p>
-         <a href="${verifyUrl}">Verify Email</a>`
-      );
+     await sendEmail(
+  email,
+  "Verify your email",
+  `
+  <h2>Welcome to Collabzy 🚀</h2>
+  <p>Please verify your email:</p>
+
+  <a href="${verifyUrl}" 
+     style="padding:12px 20px;background:black;color:white;text-decoration:none;border-radius:6px;">
+     Verify Email
+  </a>
+
+  <p>This link expires in 24 hours</p>
+  `
+);
 
     } catch (mailErr) {
       console.log("❌ Email failed (but signup success):", mailErr.message);
