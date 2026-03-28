@@ -1,4 +1,5 @@
 import ffmpeg from "fluent-ffmpeg";
+import fs from "fs";
 
 export const compressVideo = (inputPath, outputPath) => {
   return new Promise((resolve, reject) => {
