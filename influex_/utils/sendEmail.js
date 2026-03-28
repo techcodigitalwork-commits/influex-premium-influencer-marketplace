@@ -1,18 +1,18 @@
+import dotenv from "dotenv";
+dotenv.config(); // 🔥 SABSE PEHLE
+
 import nodemailer from "nodemailer";
 
 console.log("USER:", process.env.EMAIL_USER);
 console.log("PASS:", process.env.EMAIL_PASS);
-// --------------------------
-// Configure transporter
-// --------------------------
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
-  secure: false, // 🔥 IMPORTANT
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
-    
   },
   tls: {
     rejectUnauthorized: false,
