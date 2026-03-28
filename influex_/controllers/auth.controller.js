@@ -53,6 +53,7 @@ export const signup = async (req, res) => {
 
     // Token
     const emailToken = crypto.randomBytes(32).toString("hex");
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Create user
     const user = await User.create({
@@ -67,7 +68,9 @@ export const signup = async (req, res) => {
       profileStatus: "pending",
       isEmailVerified: false,
       emailVerificationToken: emailToken,
-      emailVerificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000
+      emailVerificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
+       otp,
+  otpExpiry: Date.now() + 10 * 60 * 1000 // 10 min
     });
 
     // 🔥 EMAIL SEND (SAFE VERSION)
@@ -78,15 +81,9 @@ export const signup = async (req, res) => {
   email,
   "Verify your email",
   `
-  <h2>Welcome to Collabzy 🚀</h2>
-  <p>Please verify your email:</p>
-
-  <a href="${verifyUrl}" 
-     style="padding:12px 20px;background:black;color:white;text-decoration:none;border-radius:6px;">
-     Verify Email
-  </a>
-
-  <p>This link expires in 24 hours</p>
+  <h2>Your OTP is:</h2>
+  <h1>${otp}</h1>
+  <p>This OTP is valid for 10 minutes.</p>
   `
 );
 
@@ -257,6 +254,65 @@ export const resetPassword = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+// POST /api/auth/verify-otp
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.json({ message: "Already verified" });
+    }
+
+    // ❌ wrong OTP
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // ❌ expired OTP
+    if (user.otpExpiry < Date.now()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // ✅ success
+    user.isEmailVerified = true;
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+
+    await user.save();
+
+    res.json({ success: true, message: "Email verified successfully" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+export const resendOtp = async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  user.otp = otp;
+  user.otpExpiry = Date.now() + 10 * 60 * 1000;
+
+  await user.save();
+
+  await sendEmail(
+    email,
+    "Your new OTP",
+    `<h1>${otp}</h1>`
+  );
+
+  res.json({ success: true, message: "OTP resent" });
 };
 
 // import bcrypt from "bcryptjs";
