@@ -3,7 +3,12 @@
 // Load env
 //dotenv.config();
 import dotenv from "dotenv";
-dotenv.config();
+//dotenv.config();
+//import dotenv from "dotenv";
+
+dotenv.config({
+  path: "/home/ubuntu/influex-premium-influencer-marketplace/influex_/.env",
+});
 import path from "path";
 import { fileURLToPath } from "url";
 
