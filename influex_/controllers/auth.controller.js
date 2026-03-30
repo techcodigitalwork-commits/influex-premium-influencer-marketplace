@@ -94,7 +94,10 @@ export const signup = async (req, res) => {
       user: {
         id: user._id,
         role: user.role,
-        bits: user.bits
+        bits: user.bits,
+         isSubscribed: user.isSubscribed,
+           plan: user.plan
+
       }
     });
 
