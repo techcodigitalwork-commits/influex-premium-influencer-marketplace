@@ -223,6 +223,7 @@ export const forgotPassword = async (req, res) => {
 }
 
     const rawToken = crypto.randomBytes(32).toString("hex");
+    
 
     // 🔐 hash token
     const hashedToken = crypto
@@ -254,11 +255,14 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { email, token, newPassword } = req.body;
+    console.log("EMAIL:", email);
+console.log("RAW TOKEN:", token);
 
     const hashedToken = crypto
       .createHash("sha256")
       .update(token)
       .digest("hex");
+      console.log("HASHED TOKEN:", hashedToken);
 
     const user = await User.findOne({
       email,
