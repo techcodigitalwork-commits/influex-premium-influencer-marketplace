@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema({
     required: true
   },
 
+  name: {
+    type: String,
+    required: true
+  },
+
   passwordHash: {
     type: String,
     required: true
@@ -24,7 +29,7 @@ const userSchema = new mongoose.Schema({
     default: "pending"
   },
 
-  // 🔥 TOKENS (role-based, no default)
+  // 🔥 TOKENS / USAGE
   bits: {
     type: Number,
     min: 0
@@ -40,6 +45,7 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
 
+  // 💳 SUBSCRIPTION
   razorpaySubscriptionId: {
     type: String,
     default: null
@@ -54,6 +60,7 @@ const userSchema = new mongoose.Schema({
     type: Date
   },
 
+  // 🪪 KYC
   kycStatus: {
     type: String,
     enum: ["Pending", "Verified", "Rejected"],
@@ -65,45 +72,52 @@ const userSchema = new mongoose.Schema({
     default: true
   },
 
-  // 🔥 PLAN SYSTEM
+  // 📦 PLAN
   plan: {
     type: String,
-    enum: ["free", "pro_monthly", "pro_plus_monthly", "pro_yearly", "pro_plus_yearly"],
+    enum: [
+      "free",
+      "pro_monthly",
+      "pro_plus_monthly",
+      "pro_yearly",
+      "pro_plus_yearly"
+    ],
     default: "free"
   },
-   // =======================
-  // 🔥 EMAIL VERIFICATION
+
+  // =======================
+  // 📧 EMAIL VERIFICATION (OTP BASED)
   // =======================
   isEmailVerified: {
     type: Boolean,
     default: false
   },
-  emailVerificationToken: {
-    type: String,
-    default: null
+
+  otp: {
+    type: String // hashed OTP
   },
-  emailVerificationTokenExpires: {
+
+  otpExpiry: {
     type: Date
   },
 
   // =======================
-  // 🔥 FORGOT PASSWORD
+  // 🔑 FORGOT PASSWORD
   // =======================
   resetPasswordToken: {
-    type: String,
+    type: String, // hashed token
     default: null
   },
+
   resetPasswordExpires: {
     type: Date
-  },
-otp: String,
-otpExpiry: Date,
+  }
 
 }, { timestamps: true });
 
 
 // ==============================
-// 🔥 ROLE BASED TOKEN ASSIGNMENT
+// 🔥 ROLE BASED BITS ASSIGNMENT
 // ==============================
 userSchema.pre("save", function (next) {
   if (this.isNew) {
@@ -112,7 +126,7 @@ userSchema.pre("save", function (next) {
     } else if (this.role === "influencer") {
       this.bits = 100;
     } else {
-      this.bits = 0; // admin ya fallback
+      this.bits = 0;
     }
   }
   next();
