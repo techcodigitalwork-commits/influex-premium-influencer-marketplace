@@ -26,7 +26,7 @@ const ROLE_BITS = {
 // ---------------------- SIGNUP ----------------------
 export const signup = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, name } = req.body;
 
     if (!email || !password || !role) {
       return res.status(400).json({ message: "All fields required" });
@@ -56,6 +56,7 @@ export const signup = async (req, res) => {
 
     const user = await User.create({
       email,
+      name,
       passwordHash: hashedPassword,
       role: roleLower,
       bits,
@@ -66,7 +67,7 @@ export const signup = async (req, res) => {
       profileStatus: "pending",
       isEmailVerified: false,
       otp: hashedOtp,
-      otpExpiry: Date.now() + 10 * 60 * 1000 // 10 min
+      otpExpiry: new Date(Date.now() + 10 * 60 * 1000) // 10 min
     });
 
     // send OTP email
@@ -148,7 +149,11 @@ export const resendOtp = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
-
+       
+    // 🔥 ADD THIS HERE (cooldown check)
+    if (user.otpExpiry && user.otpExpiry > Date.now() - 60 * 1000) {
+      return res.status(429).json({ message: "Wait before requesting OTP again" });
+    }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     const hashedOtp = crypto
@@ -157,7 +162,7 @@ export const resendOtp = async (req, res) => {
       .digest("hex");
 
     user.otp = hashedOtp;
-    user.otpExpiry = Date.now() + 10 * 60 * 1000;
+   user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
     await user.save();
 
@@ -213,7 +218,9 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+   if (!user) {
+  return res.json({ success: true, message: "If email exists, reset link sent" });
+}
 
     const rawToken = crypto.randomBytes(32).toString("hex");
 
