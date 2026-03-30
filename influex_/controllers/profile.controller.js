@@ -231,7 +231,8 @@ export const updateProfile = async (req, res) => {
       "companyName",
       "website",
       "industry",
-      "profileImage"
+      "profileImage",
+      "phone"
     ];
 
     allowedUpdates.forEach(field => {
