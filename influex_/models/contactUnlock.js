@@ -24,5 +24,8 @@ const contactUnlockSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-unlockSchema.index({ brandId: 1, influencerId: 1, type: 1 }, { unique: true });
+contactUnlockSchema.index(
+  { brandId: 1, influencerId: 1, type: 1 },
+  { unique: true }
+);
 export default mongoose.model("ContactUnlock", contactUnlockSchema)
