@@ -9,10 +9,16 @@ router.get("/my", auth, async (req, res) => {
       participants: req.user._id
     })
       .populate("participants", "name email role profileImage")
-      .populate("campaignId", "title") // optional but useful
+      .populate("campaignId", "title")
       .sort({ updatedAt: -1 });
 
-    res.json({ success: true, data: conversations });
+    // 🔥 IMPORTANT FIX
+    const result = conversations.map(conv => ({
+      ...conv.toObject(),
+      unreadCount: conv.unreadCounts?.get(req.user._id.toString()) || 0
+    }));
+
+    res.json({ success: true, data: result });
 
   } catch (err) {
     console.error("MY CONVERSATIONS ERROR:", err);
@@ -29,6 +35,6 @@ router.post("/send/:conversationId", auth, sendMessage);
 
 // Get all messages in conversation
 router.get("/messages/:conversationId", auth, getMessages);
-router.post("/conversations/read/:conversationId", auth, markConversationRead);
+router.post("/read/:conversationId", auth, markConversationRead);
 
 export default router;
