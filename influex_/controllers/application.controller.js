@@ -59,19 +59,19 @@ export const decideApplication = async (req, res) => {
     }
 
     // 🔥 prevent multiple accept
-    if (decisionLower === "accepted") {
-      const alreadyAccepted = await Application.findOne({
-        campaignId: campaign._id,
-        status: "accepted"
-      });
+    // if (decisionLower === "accepted") {
+    //   const alreadyAccepted = await Application.findOne({
+    //     campaignId: campaign._id,
+    //     status: "accepted"
+    //   });
 
-      if (alreadyAccepted) {
-        return res.status(400).json({
-          success: false,
-          message: "An influencer is already accepted for this campaign"
-        });
-      }
-    }
+    //   if (alreadyAccepted) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: "An influencer is already accepted for this campaign"
+    //     });
+    //   }
+    // }
 
     application.status = decisionLower;
     await application.save();
@@ -81,8 +81,8 @@ export const decideApplication = async (req, res) => {
     // ===========================
     if (decisionLower === "accepted") {
 
-      campaign.status = "completed";
-      await campaign.save();
+      //campaign.status = "completed";
+      //await campaign.save();
 
       let conversation = await Conversation.findOne({
         campaignId: campaign._id,
