@@ -8,31 +8,46 @@ export const unlockContact = async (req, res) => {
     }
 
     const { influencerId } = req.body;
+    console.log("REQ ID:", influencerId);
 
     // Brand check
     const brand = await User.findById(req.user._id);
     if (!brand) return res.status(404).json({ message: "Brand not found" });
 
-    if (brand.bits < 50) return res.status(400).json({ message: "Not enough bits" });
+    if (brand.bits < 50) {
+      return res.status(400).json({ message: "Not enough bits" });
+    }
 
-    // Deduct 50 bits
+    // 🔥 STEP 1: Find profile first
+    let profile = await Profile.findById(influencerId);
+
+    // 🔥 STEP 2: If not profileId, try finding via user field
+    if (!profile) {
+      profile = await Profile.findOne({ user: influencerId });
+    }
+
+    if (!profile) {
+      return res.status(404).json({ message: "Influencer profile not found" });
+    }
+
+    // 🔥 STEP 3: Get actual user
+    const influencer = await User.findById(profile.user);
+
+    if (!influencer) {
+      return res.status(404).json({ message: "Influencer user not found" });
+    }
+
+    // ✅ Deduct bits AFTER validation (important)
     brand.bits -= 50;
     await brand.save();
 
-    // Influencer check
-    const influencer = await User.findById(influencerId);
-    if (!influencer) return res.status(404).json({ message: "Influencer not found" });
-
-    // Fetch influencer profile for platform / portfolio
-    const profile = await Profile.findOne({ user: influencerId }).populate("user");
-    
     res.json({
       email: influencer.email,
-      platform: profile?.platform || null, // agar profile nahi hai to null
-     // portfolio: profile?.portfolioLink || null
+      platform: profile?.platform || null,
     });
 
   } catch (err) {
+    console.error("UNLOCK ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };
