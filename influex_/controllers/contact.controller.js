@@ -24,7 +24,7 @@ export const unlockContact = async (req, res) => {
     if (!influencer) return res.status(404).json({ message: "Influencer not found" });
 
     // Fetch influencer profile for platform / portfolio
-    const profile = await Profile.findOne({ user: influencerId });
+    const profile = await Profile.findOne({ user: influencerId }).populate("user");
     
     res.json({
       email: influencer.email,
