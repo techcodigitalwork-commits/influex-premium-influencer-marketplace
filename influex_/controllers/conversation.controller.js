@@ -1,10 +1,12 @@
 import Conversation from "../models/Conversation.js";
 import Notification from "../models/notification.js";
-import { detectContactInfo } from "../utils/contactDetector.js"
+import { detectContactInfo } from "../utils/contactDetector.js";
 import mongoose from "mongoose";
 
 
-// 1️⃣ Create or fetch conversation (if already exists)
+// ==============================
+// 1️⃣ GET OR CREATE CONVERSATION
+// ==============================
 export const getOrCreateConversation = async (req, res) => {
   try {
     const { campaignId, participantId } = req.body;
@@ -13,10 +15,7 @@ export const getOrCreateConversation = async (req, res) => {
       !mongoose.Types.ObjectId.isValid(campaignId) ||
       !mongoose.Types.ObjectId.isValid(participantId)
     ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid ID"
-      });
+      return res.status(400).json({ success: false, message: "Invalid ID" });
     }
 
     let conversation = await Conversation.findOne({
@@ -30,82 +29,84 @@ export const getOrCreateConversation = async (req, res) => {
         participants: [req.user._id, participantId],
         messages: [],
         lastMessage: "",
-        lastMessageAt: new Date()
+        lastMessageAt: new Date(),
+        unreadCounts: {}
       });
-       conversation = await conversation.populate(
-    "participants",
-    "name profileImage"
-  );
+
+      conversation = await conversation.populate("participants", "name profileImage");
     }
 
     res.json({ success: true, data: conversation });
 
   } catch (error) {
-    console.error("Get/Create conversation error:", error);
-    res.status(500).json({ success: false, message: "Failed to get or create conversation" });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Failed to get/create conversation" });
   }
 };
 
 
 
-// 2️⃣ Send a message
+// ==============================
+// 2️⃣ SEND MESSAGE + UNREAD COUNT
+// ==============================
 export const sendMessage = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const { text } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Conversation ID"
-      });
+    if (!text || text.trim() === "") {
+      return res.status(400).json({ success: false, message: "Message empty" });
     }
 
-    if (!text || text.trim() === "") {
+    // ❌ Contact detection
+    if (detectContactInfo(text)) {
       return res.status(400).json({
         success: false,
-        message: "Message cannot be empty"
+        message: "Sharing contact info not allowed"
       });
     }
 
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
-      return res.status(404).json({
-        success: false,
-        message: "Conversation not found"
-      });
+      return res.status(404).json({ success: false, message: "Conversation not found" });
     }
 
-    // ✅ FIXED: ObjectId comparison properly
-    if (!conversation.participants.some(
-      p => String(p) === String(req.user._id)
-    )) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized"
-      });
+    const senderId = req.user._id;
+
+    // ✅ Auth check
+    if (!conversation.participants.some(p => p.toString() === senderId.toString())) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
     const message = {
-      sender: req.user._id,
+      sender: senderId,
       text,
-      createdAt: new Date()
+      createdAt: new Date(),
+      readBy: [senderId]
     };
 
     conversation.messages.push(message);
     conversation.lastMessage = text;
     conversation.lastMessageAt = new Date();
 
+    // 🔥 UNREAD COUNT LOGIC
+    conversation.participants.forEach(pId => {
+      if (pId.toString() !== senderId.toString()) {
+        const current = conversation.unreadCounts.get(pId.toString()) || 0;
+        conversation.unreadCounts.set(pId.toString(), current + 1);
+      }
+    });
+
     await conversation.save();
 
-    // ✅ FIXED: profileId hata diya, _id use kiya
-    const otherParticipant = conversation.participants.find(
-      p => String(p) !== String(req.user._id)
+    // 🔔 Notification
+    const otherUser = conversation.participants.find(
+      p => p.toString() !== senderId.toString()
     );
 
     await Notification.create({
-      user: otherParticipant,
-      message: `New message from ${req.user.name || "Brand/Influencer"}`,
+      user: otherUser,
+      message: `New message from ${req.user.name || "User"}`,
       type: "new_message",
       link: `/chat/${conversation._id}`
     });
@@ -113,78 +114,100 @@ export const sendMessage = async (req, res) => {
     res.json({ success: true, data: message });
 
   } catch (error) {
-    console.error("Send message error:", error);
-    res.status(500).json({ success: false, message: "Failed to send message" });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Send failed" });
   }
 };
 
 
 
-// 3️⃣ Get messages for a conversation
+// ==============================
+// 3️⃣ GET MESSAGES
+// ==============================
 export const getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Conversation ID"
-      });
-    }
 
     const conversation = await Conversation.findById(conversationId)
       .populate("messages.sender", "name profileImage")
       .populate("participants", "name profileImage");
 
     if (!conversation) {
-      return res.status(404).json({
-        success: false,
-        message: "Conversation not found"
-      });
+      return res.status(404).json({ success: false, message: "Not found" });
     }
 
-    // ✅ FIXED: proper ObjectId comparison
     if (!conversation.participants.some(
-      p => String(p._id) === String(req.user._id)
+      p => p._id.toString() === req.user._id.toString()
     )) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized"
-      });
+      return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
     res.json({ success: true, data: conversation.messages });
 
   } catch (error) {
-    console.error("Get messages error:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch messages" });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Fetch failed" });
   }
 };
 
 
-export const sentMessage = async (req,res)=>{
 
- try{
+// ==============================
+// 4️⃣ MARK AS READ
+// ==============================
+export const markConversationRead = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
 
- const {message} = req.body
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: "Not found" });
+    }
 
- const blocked = detectContactInfo(message)
+    const userId = req.user._id.toString();
 
- if(blocked){
-   return res.status(400).json({
-     success:false,
-     message:"Sharing contact information is not allowed. Please communicate inside the platform."
-   })
- }
+    // ✅ unread count reset
+    conversation.unreadCounts.set(userId, 0);
 
- // save message normally
- res.json({
-  success:true,
-  message:"Message sent"
- })
+    // ✅ mark all messages as read
+    conversation.messages.forEach(msg => {
+      if (!msg.readBy.includes(req.user._id)) {
+        msg.readBy.push(req.user._id);
+      }
+    });
 
- }catch(err){
-  res.status(500).json({message:err.message})
- }
+    await conversation.save();
 
-}
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Read failed" });
+  }
+};
+
+
+
+// ==============================
+// 5️⃣ GET MY CONVERSATIONS
+// ==============================
+export const getMyConversations = async (req, res) => {
+  try {
+    const conversations = await Conversation.find({
+      participants: req.user._id
+    })
+      .populate("participants", "name profileImage")
+      .sort({ lastMessageAt: -1 });
+
+    const result = conversations.map(conv => ({
+      ...conv.toObject(),
+      unreadCount: conv.unreadCounts?.get(req.user._id.toString()) || 0
+    }));
+
+    res.json({ success: true, data: result });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Failed" });
+  }
+};

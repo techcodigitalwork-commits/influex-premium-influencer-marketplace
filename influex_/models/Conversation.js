@@ -14,7 +14,12 @@ const messageSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+    readBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
+
 });
 
 const conversationSchema = new mongoose.Schema({
@@ -38,6 +43,11 @@ const conversationSchema = new mongoose.Schema({
 
   lastMessageAt: {
     type: Date
+  },
+   unreadCounts: {
+    type: Map,
+    of: Number,
+    default: {}
   }
 
 }, { timestamps: true });
