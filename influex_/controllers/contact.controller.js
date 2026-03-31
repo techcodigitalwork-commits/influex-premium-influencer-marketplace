@@ -1,5 +1,6 @@
 import User from "../models/user.js";
 import Profile from "../models/profile.js";
+import  contactUnlock from "../models/contactUnlock.js";
 
 export const unlockContact = async (req, res) => {
   try {
@@ -7,21 +8,16 @@ export const unlockContact = async (req, res) => {
       return res.status(401).json({ message: "User not authenticated" });
     }
 
-    const { influencerId } = req.body;
-    console.log("REQ ID:", influencerId);
+    const { influencerId, type } = req.body;
 
-    // Brand check
-    const brand = await User.findById(req.user._id);
-    if (!brand) return res.status(404).json({ message: "Brand not found" });
-
-    if (brand.bits < 50) {
-      return res.status(400).json({ message: "Not enough bits" });
+    if (!type || !["email", "instagram"].includes(type)) {
+      return res.status(400).json({ message: "Invalid unlock type" });
     }
 
-    // 🔥 STEP 1: Find profile first
-    let profile = await Profile.findById(influencerId);
+    const brandId = req.user._id;
 
-    // 🔥 STEP 2: If not profileId, try finding via user field
+    // 🔍 find profile
+    let profile = await Profile.findById(influencerId);
     if (!profile) {
       profile = await Profile.findOne({ user: influencerId });
     }
@@ -30,21 +26,55 @@ export const unlockContact = async (req, res) => {
       return res.status(404).json({ message: "Influencer profile not found" });
     }
 
-    // 🔥 STEP 3: Get actual user
     const influencer = await User.findById(profile.user);
-
     if (!influencer) {
       return res.status(404).json({ message: "Influencer user not found" });
     }
 
-    // ✅ Deduct bits AFTER validation (important)
+    // 🔒 CHECK: already unlocked?
+    const alreadyUnlocked = await  contactUnlock.findOne({
+      brandId,
+      influencerId: influencer._id,
+      type
+    });
+
+    if (alreadyUnlocked) {
+      // ✅ free return
+      if (type === "email") {
+        return res.json({ email: influencer.email });
+      }
+      if (type === "instagram") {
+        return res.json({ platform: profile.platform || null });
+      }
+    }
+
+    // 💰 check balance
+    const brand = await User.findById(brandId);
+    if (!brand) return res.status(404).json({ message: "Brand not found" });
+
+    if (brand.bits < 50) {
+      return res.status(400).json({ message: "Not enough bits" });
+    }
+
+    // 💸 deduct
     brand.bits -= 50;
     await brand.save();
 
-    res.json({
-      email: influencer.email,
-      platform: profile?.platform || null,
+    // 💾 save unlock
+    await  contactUnlock.create({
+      brandId,
+      influencerId: influencer._id,
+      type
     });
+
+    // 🎯 return based on type
+    if (type === "email") {
+      return res.json({ email: influencer.email });
+    }
+
+    if (type === "instagram") {
+      return res.json({ platform: profile.platform || null });
+    }
 
   } catch (err) {
     console.error("UNLOCK ERROR:", err);
