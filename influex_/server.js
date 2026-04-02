@@ -28,8 +28,8 @@ import cors from "cors";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import http from "http";
-import { Server } from "socket.io";
-
+//import { Server } from "socket.io";
+import { initSocket } from "./utils/socket.js";
 // Load env
 //dotenv.config();
 
@@ -119,83 +119,84 @@ mongoose.connect(process.env.MONGO_URI)
 
     // Create HTTP server
     const server = http.createServer(app);
+    initSocket(server);
 
     // Socket.io setup
    
-    io = new Server(server, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-      }
-    });
+//     io = new Server(server, {
+//       cors: {
+//         origin: "*",
+//         methods: ["GET", "POST"]
+//       }
+//     });
 
-    // Socket.io events
-    io.on("connection", (socket) => {
-      console.log("User connected: ", socket.id);
+//     // Socket.io events
+//     io.on("connection", (socket) => {
+//       console.log("User connected: ", socket.id);
 
-      socket.on("joinConversation", (convId) => {
-  socket.join(convId.toString());
-});
+//       socket.on("joinConversation", (convId) => {
+//   socket.join(convId.toString());
+// });
 
-      socket.on("joinConversation", (convId) => {
-        socket.join(convId.toString());
-        console.log(`User ${convId} joined room`);
-      });
+//       socket.on("joinConversation", (convId) => {
+//         socket.join(convId.toString());
+//         console.log(`User ${convId} joined room`);
+//       });
 
-      socket.on("sentMessage", async ({ conversationId, senderId, text }) => {
-        if (!text || !conversationId || !senderId) return;
+//       socket.on("sentMessage", async ({ conversationId, senderId, text }) => {
+//         if (!text || !conversationId || !senderId) return;
 
-        // Contact detection
-        const blocked = detectContactInfo(text);
-        if (blocked) {
-          socket.emit("messageBlocked", {
-            message:
-              "Sharing contact information (phone, email, Instagram, WhatsApp) is not allowed. Please communicate inside the platform."
-          });
-          return;
-        }
+//         // Contact detection
+//         const blocked = detectContactInfo(text);
+//         if (blocked) {
+//           socket.emit("messageBlocked", {
+//             message:
+//               "Sharing contact information (phone, email, Instagram, WhatsApp) is not allowed. Please communicate inside the platform."
+//           });
+//           return;
+//         }
 
-        const conversation = await Conversation.findById(conversationId);
-        if (!conversation) return;
+//         const conversation = await Conversation.findById(conversationId);
+//         if (!conversation) return;
 
-        const message = {
-          sender: senderId,
-          text,
-          createdAt: new Date()
-        };
+//         const message = {
+//           sender: senderId,
+//           text,
+//           createdAt: new Date()
+//         };
 
-        conversation.messages.push(message);
-        conversation.lastMessage = text;
-        conversation.lastMessageAt = new Date();
-        await conversation.save();
+//         conversation.messages.push(message);
+//         conversation.lastMessage = text;
+//         conversation.lastMessageAt = new Date();
+//         await conversation.save();
 
-        // Notify participants
-        conversation.participants.forEach((participantId) => {
-          io.to(participantId.toString()).emit("receiveMessage", {
-            conversationId,
-            message
-          });
+//         // Notify participants
+//         conversation.participants.forEach((participantId) => {
+//           io.to(participantId.toString()).emit("receiveMessage", {
+//             conversationId,
+//             message
+//           });
 
-          if (participantId.toString() !== senderId.toString()) {
-            io.to(participantId.toString()).emit("newNotification", {
-              message: `New message from ${senderId}`,
-              conversationId
-            });
+//           if (participantId.toString() !== senderId.toString()) {
+//             io.to(participantId.toString()).emit("newNotification", {
+//               message: `New message from ${senderId}`,
+//               conversationId
+//             });
 
-            Notification.create({
-              user: participantId,
-              message: `New message from ${senderId}`,
-              type: "new_message",
-              link: `/chat/${conversationId}`
-            });
-          }
-        });
-      });
+//             Notification.create({
+//               user: participantId,
+//               message: `New message from ${senderId}`,
+//               type: "new_message",
+//               link: `/chat/${conversationId}`
+//             });
+//           }
+//         });
+//       });
 
-      socket.on("disconnect", () => {
-        console.log("User disconnected: ", socket.id);
-      });
-    });
+//       socket.on("disconnect", () => {
+//         console.log("User disconnected: ", socket.id);
+//       });
+//     });
 
     // Start server
     server.listen(PORT, "0.0.0.0", () => {

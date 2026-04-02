@@ -2,7 +2,7 @@ import Conversation from "../models/Conversation.js";
 import Notification from "../models/notification.js";
 import { detectContactInfo } from "../utils/contactDetector.js";
 import mongoose from "mongoose";
-import {io}  from "../server.js"; // 👈 jaha tera socket init hai
+import { getIO } from "../utils/socket.js"
 //import io from "../server.js"
 
 
@@ -114,7 +114,7 @@ const populatedMessage = {
 };
 
 // 🔥 REALTIME EMIT (MOST IMPORTANT)
-io.to(conversation._id.toString()).emit("newMessage", populatedMessage);
+getIO().to(conversation._id.toString()).emit("newMessage", populatedMessage);
 
     // 🔔 Notification
     const otherUser = conversation.participants.find(
