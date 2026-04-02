@@ -8,26 +8,39 @@ const PLAN_DETAILS = {
   "plan_SVPLspo3dTExLj": {
     plan: "pro_monthly",
     role : "Brand",
-    tokens: 1000,
+    bits: 1000,
     duration: 30
   },
   "plan_SVnuPYiXBIl8x5": {
     plan: "pro_plus_monthly",
     role : "Brand",
-    tokens: 2500,
+    bits: 2500,
     duration: 30
   },
   "plan_SVnyugqOr3jRyH": {
     plan: "pro_yearly",
     role: "Brand",
-    tokens: 12000,
+    bits: 12000,
     duration: 365
   },
   "plan_SVo6c8aoVBSgMf": {
     plan: "pro_plus_yearly",
     role: "Brand",
-    tokens: 25000,
+    bits: 25000,
     duration: 365
+  },
+  "plan_SYYSXhpVhIN5YR": {
+     plan: "pro_monthly",
+    role: "Influencer",
+    bits: 1000,
+    duration: 30
+  },
+  "plan_SYYXASaIiairAS":{ 
+     plan: "pro_plus_monthly",
+    role: "Influencer",
+    bits: 2000,
+    duration: 30
+
   }
 };
 
@@ -66,20 +79,69 @@ export const createRazorpaySubscription = async (req, res) => {
 };
 // MANUAL SUBSCRIPTION ACTIVATE
 // ===============================
+// export const purchaseSubscription = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user._id);
+
+//     user.isSubscribed = true;
+//     user.subscriptionExpiry = new Date(
+//       Date.now() + 30 * 24 * 60 * 60 * 1000
+//     );
+
+//     await user.save();
+
+//     res.json({ success: true, message: "Subscription activated manually" });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: "Subscription failed" });
+//   }
+// };
 export const purchaseSubscription = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
+    const { plan_id, planId } = req.body;
+
+    const planDbMap = {
+      "pro":           "pro_monthly",
+      "pro_plus":      "pro_plus_monthly",
+      "pro_year":      "pro_yearly",
+      "pro_plus_year": "pro_plus_yearly",
+    };
+
+    const planDetails = PLAN_DETAILS[plan_id];
+
+    const canonicalPlan =
+      planDetails?.plan ||
+      planDbMap[planId] ||
+      user.plan ||
+      "pro_monthly";
+
+    const planBits = planDetails?.bits || 1000;
+
     user.isSubscribed = true;
+    user.plan = canonicalPlan;
+    user.bits = planBits;
+
     user.subscriptionExpiry = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000
+      Date.now() + (planDetails?.duration || 30) * 24 * 60 * 60 * 1000
     );
 
     await user.save();
 
-    res.json({ success: true, message: "Subscription activated manually" });
+    res.json({
+      success: true,
+      message: "Subscription activated manually",
+      plan: canonicalPlan,
+      bits: planBits,
+      isSubscribed: true,
+      planActivatedAt: new Date().toISOString(),
+    });
+
   } catch (err) {
-    res.status(500).json({ success: false, message: "Subscription failed" });
+    res.status(500).json({
+      success: false,
+      message: "Subscription failed"
+    });
   }
 };
 
@@ -120,7 +182,7 @@ export const razorpayWebhook = async (req, res) => {
         const planData = PLAN_DETAILS[planId];
 
         user.plan = planData.plan;
-        user.bits = planData.tokens;
+        user.bits = planData.bits;
 
         user.subscriptionExpiry = new Date(
           Date.now() + planData.duration * 24 * 60 * 60 * 1000
@@ -145,7 +207,7 @@ export const razorpayWebhook = async (req, res) => {
       if (user && PLAN_DETAILS[planId]) {
         const planData = PLAN_DETAILS[planId];
 
-        user.bits += planData.tokens;
+        user.bits += planData.bits;
 
         user.subscriptionExpiry = new Date(
           Date.now() + planData.duration * 24 * 60 * 60 * 1000

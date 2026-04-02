@@ -56,7 +56,11 @@ export const getMyProfile = async (req, res) => {
 
     res.json({
       success: true,
-      profile
+      profile,
+      bits: profile.user?.bits,
+  isSubscribed: profile.user?.isSubscribed,
+  plan: profile.user?.plan,
+  subscriptionExpiry: profile.user?.subscriptionExpiry
     });
 
   } catch (err) {
