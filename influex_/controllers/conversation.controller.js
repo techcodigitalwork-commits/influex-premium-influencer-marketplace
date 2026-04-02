@@ -2,8 +2,8 @@ import Conversation from "../models/Conversation.js";
 import Notification from "../models/notification.js";
 import { detectContactInfo } from "../utils/contactDetector.js";
 import mongoose from "mongoose";
-// import {io}  from "../server.js"; // 👈 jaha tera socket init hai
-import io from "../server.js"
+import {io}  from "../server.js"; // 👈 jaha tera socket init hai
+//import io from "../server.js"
 
 
 // ==============================

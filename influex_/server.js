@@ -127,9 +127,13 @@ mongoose.connect(process.env.MONGO_URI)
     io.on("connection", (socket) => {
       console.log("User connected: ", socket.id);
 
-      socket.on("joinRoom", (profileId) => {
-        socket.join(profileId);
-        console.log(`User ${profileId} joined room`);
+      socket.on("joinConversation", (convId) => {
+  socket.join(convId.toString());
+});
+
+      // socket.on("joinRoom", (profileId) => {
+      //   socket.join(profileId);
+        console.log(`User ${convId} joined room`);
       });
 
       socket.on("sentMessage", async ({ conversationId, senderId, text }) => {
