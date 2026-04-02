@@ -58,12 +58,14 @@ import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
 import { detectContactInfo } from "./utils/contactDetector.js";
 import paymentsRoutes from "./Routes/payments.routes.js"
-import { Server } from "socket.io";
 
-export let io;
+
+
 
 // App init
 const app = express();
+
+export let io;
 
 // Middlewares
 app.use(cors());
