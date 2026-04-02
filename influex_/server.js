@@ -58,6 +58,9 @@ import Conversation from "./models/Conversation.js";
 import Notification from "./models/notification.js";
 import { detectContactInfo } from "./utils/contactDetector.js";
 import paymentsRoutes from "./Routes/payments.routes.js"
+import { Server } from "socket.io";
+
+export let io;
 
 // App init
 const app = express();
@@ -116,7 +119,8 @@ mongoose.connect(process.env.MONGO_URI)
     const server = http.createServer(app);
 
     // Socket.io setup
-    const io = new Server(server, {
+   
+    io = new Server(server, {
       cors: {
         origin: "*",
         methods: ["GET", "POST"]
