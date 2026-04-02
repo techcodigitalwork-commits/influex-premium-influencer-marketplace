@@ -131,8 +131,8 @@ mongoose.connect(process.env.MONGO_URI)
   socket.join(convId.toString());
 });
 
-      // socket.on("joinRoom", (profileId) => {
-      //   socket.join(profileId);
+      socket.on("joinConversation", (convId) => {
+        socket.join(convId.toString());
         console.log(`User ${convId} joined room`);
       });
 
