@@ -108,27 +108,42 @@ export const purchaseSubscription = async (req, res) => {
       "pro_plus_year": "pro_plus_yearly",
     };
 
+    // ✅ plan must exist
     const planDetails = PLAN_DETAILS[plan_id];
 
+    if (!planDetails) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid plan_id"
+      });
+    }
+
+    // ✅ already subscribed check (abuse stop)
+    if (user.isSubscribed) {
+      return res.status(400).json({
+        success: false,
+        message: "User already subscribed"
+      });
+    }
+
     const canonicalPlan =
-      planDetails?.plan ||
+      planDetails.plan ||
       planDbMap[planId] ||
-      user.plan ||
       "pro_monthly";
 
-    const planBits = planDetails?.bits || 1000;
+    const planBits = planDetails.bits;
 
     user.isSubscribed = true;
     user.plan = canonicalPlan;
     user.bits = planBits;
 
     user.subscriptionExpiry = new Date(
-      Date.now() + (planDetails?.duration || 30) * 24 * 60 * 60 * 1000
+      Date.now() + (planDetails.duration || 30) * 24 * 60 * 60 * 1000
     );
 
     await user.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: "Subscription activated manually",
       plan: canonicalPlan,
@@ -138,7 +153,9 @@ export const purchaseSubscription = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({
+    console.error("Purchase Subscription Error:", err);
+
+    return res.status(500).json({
       success: false,
       message: "Subscription failed"
     });
