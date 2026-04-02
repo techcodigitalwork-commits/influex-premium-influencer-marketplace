@@ -2,6 +2,7 @@ import Conversation from "../models/Conversation.js";
 import Notification from "../models/notification.js";
 import { detectContactInfo } from "../utils/contactDetector.js";
 import mongoose from "mongoose";
+import { io } from "../server.js"; // 👈 jaha tera socket init hai
 
 
 // ==============================
@@ -97,7 +98,22 @@ export const sendMessage = async (req, res) => {
       }
     });
 
+    // await conversation.save();
     await conversation.save();
+
+// 🔥 populate sender (frontend ko proper data mile)
+const populatedMessage = {
+  ...message,
+  sender: {
+    _id: req.user._id,
+    name: req.user.name,
+    profileImage: req.user.profileImage
+  },
+  conversationId: conversation._id
+};
+
+// 🔥 REALTIME EMIT (MOST IMPORTANT)
+io.to(conversation._id.toString()).emit("newMessage", populatedMessage);
 
     // 🔔 Notification
     const otherUser = conversation.participants.find(
