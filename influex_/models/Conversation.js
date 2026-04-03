@@ -15,11 +15,10 @@ const messageSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-    readBy: [{
+  readBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }]
-
 });
 
 const conversationSchema = new mongoose.Schema({
@@ -27,6 +26,12 @@ const conversationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Campaign",
     required: true
+  },
+
+  // 🔥 ADD THIS (tera route ke liye)
+  service_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Service"
   },
 
   participants: [{
@@ -37,14 +42,11 @@ const conversationSchema = new mongoose.Schema({
 
   messages: [messageSchema],
 
-  lastMessage: {
-    type: String
-  },
+  lastMessage: String,
 
-  lastMessageAt: {
-    type: Date
-  },
-   unreadCounts: {
+  lastMessageAt: Date,
+
+  unreadCounts: {
     type: Map,
     of: Number,
     default: {}
@@ -53,4 +55,3 @@ const conversationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export default mongoose.model("Conversation", conversationSchema);
-
