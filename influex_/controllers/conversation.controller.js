@@ -241,6 +241,7 @@ export const initiateChat = async (req, res) => {
   try {
     const user_id = req.user?._id;
     const { service_id, provider_id } = req.body;
+  
 
     if (!service_id || !provider_id || !user_id) {
       return res.status(400).json({
@@ -282,6 +283,7 @@ export const initiateChat = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const { chat_id, message } = req.body;
+    console.log("sendMessage body:", req.body);
     const sender_id = req.user?._id;
 
     if (!chat_id || !message || !sender_id) {
