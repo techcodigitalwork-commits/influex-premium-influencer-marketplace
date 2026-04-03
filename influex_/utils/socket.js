@@ -10,7 +10,7 @@ export const initSocket = (server) => {
       origin:  "*",
       methods: ["GET", "POST"],
     },
-    transports: ["websocket"],
+    
   });
 
   io.on("connection", (socket) => {
