@@ -232,7 +232,7 @@ import Conversation from "../models/Conversation.js";
 import Notification from "../models/notification.js";
 import { getIO } from "../utils/socket.js";
 import { detectContactInfo } from "../utils/contactDetector.js";
-import Conversation from "../models/Conversation.js";
+
 
 // ==============================
 // 1️⃣ INITIATE CHAT
