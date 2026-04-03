@@ -7,7 +7,7 @@ let io = null;
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "*",
+      origin: ["https://collabzy.in"],
       methods: ["GET", "POST"],
     },
   });
