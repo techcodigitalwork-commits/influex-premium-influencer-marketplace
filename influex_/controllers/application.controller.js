@@ -58,20 +58,7 @@ export const decideApplication = async (req, res) => {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    // 🔥 prevent multiple accept
-    // if (decisionLower === "accepted") {
-    //   const alreadyAccepted = await Application.findOne({
-    //     campaignId: campaign._id,
-    //     status: "accepted"
-    //   });
-
-    //   if (alreadyAccepted) {
-    //     return res.status(400).json({
-    //       success: false,
-    //       message: "An influencer is already accepted for this campaign"
-    //     });
-    //   }
-    // }
+    
 
     application.status = decisionLower;
     await application.save();

@@ -14,7 +14,7 @@ const uploadVideo = multer({
   storage, // 👈 use storage instead of dest
 
   limits: {
-    fileSize: 60 * 1024 * 1024,
+    fileSize: 100 * 1024 * 1024,
   },
 
   fileFilter: (req, file, cb) => {

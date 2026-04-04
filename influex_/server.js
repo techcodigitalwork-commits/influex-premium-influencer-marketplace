@@ -1,10 +1,6 @@
 
-//import dotenv from "dotenv";
-// Load env
-//dotenv.config();
 import dotenv from "dotenv";
-//dotenv.config();
-//import dotenv from "dotenv";
+
 
 dotenv.config({
   path: "/home/ubuntu/influex-premium-influencer-marketplace/influex_/.env",
@@ -28,7 +24,6 @@ import cors from "cors";
 import morgan from "morgan";
 import mongoose from "mongoose";
 import http from "http";
-//import { Server } from "socket.io";
 import { initSocket } from "./utils/socket.js";
 // Load env
 //dotenv.config();
@@ -107,10 +102,6 @@ app.use("/api/dispute", disputeRoutes);
 // MongoDB connect + server start
 const PORT = process.env.PORT || 5000;
 
-// Health check
-// app.get("/", (req, res) => {
-//   res.send("🚀 Influex Backend API is running");
-// });
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
