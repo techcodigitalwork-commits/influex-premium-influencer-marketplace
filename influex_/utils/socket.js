@@ -1,16 +1,14 @@
-// 🔥 GLOBAL SOCKET INSTANCE
 import { Server } from "socket.io";
 
 let io = null;
 
-// init (server se call hoga)
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin:  "*",
+      origin: "*",
       methods: ["GET", "POST"],
+       transports: ["websocket"],
     },
-    
   });
 
   io.on("connection", (socket) => {
@@ -20,7 +18,12 @@ export const initSocket = (server) => {
       socket.join(convId.toString());
       console.log("📥 Joined room:", convId);
     });
+  // ✅ MUST ADD THIS
+  socket.on("send_message", (data) => {
+    console.log("📤 Message received:", data);
 
+    io.to(data.room).emit("receive_message", data);
+  });
     socket.on("disconnect", () => {
       console.log("🔴 Socket Disconnected:", socket.id);
     });
@@ -29,7 +32,6 @@ export const initSocket = (server) => {
   return io;
 };
 
-// 🔥 anywhere se use karne ke liye
 export const getIO = () => {
   if (!io) {
     throw new Error("❌ Socket.io not initialized!");
