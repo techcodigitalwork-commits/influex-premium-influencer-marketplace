@@ -278,6 +278,7 @@ export const getApplications = async (req, res) => {
 export const getMyApplications = async (req, res) => {
   try {
 
+       res.set("Cache-Control", "no-store");
     const applications = await Application.find({
       influencerId: req.user._id
     })
