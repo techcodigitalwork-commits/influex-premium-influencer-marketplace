@@ -204,7 +204,9 @@ export const applyToCampaign = async (req, res) => {
       proposal: req.body.proposal || "",
       status:"pending"
     });
-
+await Campaign.findByIdAndUpdate(campaignId, {
+  $inc: { applicationsCount: 1 }
+});
     user.bits -= COST.APPLY;
     user.applicationsUsed = (user.applicationsUsed || 0) + 1;
     await user.save();
