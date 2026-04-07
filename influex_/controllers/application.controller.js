@@ -242,6 +242,7 @@ export const getApplications = async (req, res) => {
   try {
 
     const { id } = req.params;
+    console.log("id",id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
