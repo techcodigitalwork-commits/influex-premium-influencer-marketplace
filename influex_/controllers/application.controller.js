@@ -214,6 +214,7 @@ await Campaign.findByIdAndUpdate(campaignId, {
     await createNotificationService({
       userId: campaign.brandId,
       senderId: influencerId,
+      user: user.name,
       message: `New application received for "${campaign.title}"`,
       type: "new_application",
       link: `/campaign/${campaign._id}`,
