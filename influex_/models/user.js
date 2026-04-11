@@ -97,6 +97,8 @@ const userSchema = new mongoose.Schema({
   otp: {
     type: String // hashed OTP
   },
+  // model me add kar
+otpLastSent: Date,
 
   otpExpiry: {
     type: Date

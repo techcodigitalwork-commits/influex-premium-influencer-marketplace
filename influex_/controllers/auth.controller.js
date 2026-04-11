@@ -152,22 +152,38 @@ export const resendOtp = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.otpLastSent && Date.now() - user.otpLastSent < 60 * 1000) {
+  return res.status(429).json({ message: "Wait 1 min before retry" });
+}
+
+const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+const hashedOtp = crypto
+  .createHash("sha256")
+  .update(otp)
+  .digest("hex");
+
+user.otp = hashedOtp;
+user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+user.otpLastSent = Date.now();
+
+await user.save();
        
-    // 🔥 ADD THIS HERE (cooldown check)
-    if (user.otpExpiry && user.otpExpiry > Date.now() - 60 * 1000) {
-      return res.status(429).json({ message: "Wait before requesting OTP again" });
-    }
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  //   // 🔥 ADD THIS HERE (cooldown check)
+  //   if (user.otpExpiry && user.otpExpiry > Date.now() - 60 * 1000) {
+  //     return res.status(429).json({ message: "Wait before requesting OTP again" });
+  //   }
+  //   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const hashedOtp = crypto
-      .createHash("sha256")
-      .update(otp)
-      .digest("hex");
+  //   const hashedOtp = crypto
+  //     .createHash("sha256")
+  //     .update(otp)
+  //     .digest("hex");
 
-    user.otp = hashedOtp;
-   user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+  //   user.otp = hashedOtp;
+  //  user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    await user.save();
+  //   await user.save();
 
     await sendEmail(
       email,
