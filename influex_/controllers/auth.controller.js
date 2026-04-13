@@ -222,7 +222,10 @@ export const login = async (req, res) => {
         id: user._id,
         role: user.role,
         bits: user.bits,
-        plan: user.plan
+        plan: user.plan,
+        name : user.name,
+        email : user.email
+
       }
     });
 
