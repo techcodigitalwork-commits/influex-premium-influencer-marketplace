@@ -39,3 +39,22 @@ export const fetchCategories = async () => {
 
   return formatted;
 };
+export const fetchSubCategories = async () => {
+  const cacheKey = "meta:subCategories";
+
+  const cached = await getCache(cacheKey);
+  if (cached) return cached;
+
+  const subCategories = await Profile.distinct("subCategories", {
+    subCategories: { $ne: null }
+  });
+
+  const formatted = subCategories
+    .map(c => c.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+
+  await setCache(cacheKey, formatted, 21600); // 6 hours
+
+  return formatted;
+};
