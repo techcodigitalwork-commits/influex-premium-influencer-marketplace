@@ -27,7 +27,8 @@ const profileSchema = new mongoose.Schema(
     location: String,
 
     // Influencer specific
-    categories: [String],   // 🔥 array better hai
+      categories: [String],     // Influencer, Photographer, Singer
+      subCategories: [String],  // Beauty, Tech, Fitness  // 🔥 array better hai
     platform: String,
 
     // Brand specific
