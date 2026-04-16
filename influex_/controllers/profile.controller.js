@@ -1,6 +1,7 @@
 import Profile from "../models/profile.js";
 import User from "../models/user.js";
 import ContactUnlock from "../models/contactUnlock.js";
+import { fetchSubCategories } from "../services/meta.service.js";
 
 
 // Create Profile
@@ -128,6 +129,7 @@ export const getInfluencers = async (req, res) => {
         followers: inf.followers,
         location: inf.location,
         categories: inf.categories,
+        SubCategories: inf.SubCategories,
         platform: inf.platform,
         profileImage: inf.profileImage,
         companyName: inf.companyName,
@@ -231,6 +233,7 @@ export const updateProfile = async (req, res) => {
        "followers",
       "location",
       "categories",
+      "subCategories",
       "platform",
       "companyName",
       "website",
