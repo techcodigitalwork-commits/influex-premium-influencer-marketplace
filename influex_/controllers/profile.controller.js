@@ -129,7 +129,7 @@ export const getInfluencers = async (req, res) => {
         followers: inf.followers,
         location: inf.location,
         categories: inf.categories,
-        subCategories: inf.SubCategories,
+        subCategories: inf.subCategories,
         platform: inf.platform,
         profileImage: inf.profileImage,
         companyName: inf.companyName,
