@@ -283,7 +283,7 @@ export const updateCampaign = async (req, res) => {
     campaign.description = description || campaign.description;
     campaign.roles = roles || campaign.roles;
     campaign.categories = categories || campaign.categories;
-    campaign.subCategories = subCategories || campaign.subCategories
+    campaign.subCategories = subCategories || campaign.subCategories;
     campaign.city = city || campaign.city;
     campaign.budget = budget || campaign.budget;
 
