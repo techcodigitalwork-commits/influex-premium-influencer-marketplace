@@ -62,7 +62,7 @@ export const createCampaign = async (req, res) => {
       });
     }
 
-    const { title, description, roles, categories, city, budget } = req.body;
+    const { title, description, roles, categories,subCategories, city, budget } = req.body;
 
     const campaign = await Campaign.create({
       brandId: req.user._id,
@@ -70,6 +70,7 @@ export const createCampaign = async (req, res) => {
       description,
       roles,
       categories,
+      subCategories,
       city,
       budget
     });
@@ -276,12 +277,13 @@ export const updateCampaign = async (req, res) => {
       });
     }
 
-    const { title, description, roles, categories, city, budget } = req.body;
+    const { title, description, roles, categories,subCategories, city, budget } = req.body;
 
     campaign.title = title || campaign.title;
     campaign.description = description || campaign.description;
     campaign.roles = roles || campaign.roles;
     campaign.categories = categories || campaign.categories;
+    campaign.subCategories = subCategories || campaign.subCategories
     campaign.city = city || campaign.city;
     campaign.budget = budget || campaign.budget;
 
