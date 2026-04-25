@@ -22,7 +22,7 @@ const campaignSchema = new mongoose.Schema({
   }],
 
   categories: [String],
-  subCategories : [string],
+  subCategories : [String],
    
  
   city: {
