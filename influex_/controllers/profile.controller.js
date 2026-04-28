@@ -125,6 +125,7 @@ export const getInfluencers = async (req, res) => {
       return {
         id: inf._id,
         name: inf.name,
+        userId: inf.user?._id,
         bio: inf.bio,
         followers: inf.followers,
         location: inf.location,
