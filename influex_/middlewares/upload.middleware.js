@@ -1,27 +1,42 @@
 import multer from "multer";
-import multerS3 from "multer-s3";
-import { s3 } from "../config/s3.js";
+import fs from "fs";
+import path from "path";
 
-const upload = multer({
-  storage: multerS3({
-    s3,
-    bucket: "influex-profile-images",
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-    key: (req, file, cb) => {
-      cb(null, `profiles/${Date.now()}-${file.originalname}`);
-    },
-  }),
+// 📁 folders
+const paths = {
+  profile: "uploads/profiles",
+  image: "uploads/images",
+  video: "uploads/videos",
+};
 
-  limits: {
-    fileSize: 5 * 1024 * 1024,
+// ensure all folders exist
+Object.values(paths).forEach((p) => {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+});
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      if (req.baseUrl.includes("profile")) {
+        cb(null, paths.profile);
+      } else {
+        cb(null, paths.image);
+      }
+    } else if (file.mimetype.startsWith("video/")) {
+      cb(null, paths.video);
+    }
   },
 
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only images allowed"), false);
-    }
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024,
   },
 });
 
