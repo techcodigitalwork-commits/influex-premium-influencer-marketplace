@@ -41,8 +41,13 @@ export const uploadPost = async (req, res) => {
       caption: req.body.caption || "",
     });
 
-    res.json({ success: true, data: newPost });
-
+    // res.json({ success: true, data: newPost });
+    res.json({
+        success: true,
+        data: {
+         url,
+        },
+        });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
